@@ -79,9 +79,6 @@ button{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.9rem;letter-
     <div class="pl">› Hall of Fame — Top batallas por destrucción total</div>
     <div id="hof-list"></div>
     <div id="hof-empty" style="font-family:'Share Tech Mono',monospace;font-size:.78rem;color:var(--dim);text-align:center;padding:1rem;">Aún no hay batallas registradas.</div>
-    <div class="br" id="hof-controls" style="display:none">
-      <button class="b2" onclick="clearHOF()">Vaciar Hall of Fame</button>
-    </div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -756,10 +753,15 @@ async function hofSave(data) {
 }
 
 async function hofDelete(key) {
+  const adminKey = prompt('Clave de administrador:');
+  if (!adminKey) return;
+
   try {
     const res = await fetch(HOF_API + '/hof/' + encodeURIComponent(key), {
       method: 'DELETE',
+      headers: { 'X-Admin-Key': adminKey },
     });
+    if (res.status === 401) { toast('Clave incorrecta'); return; }
     if (!res.ok) throw new Error('API error');
     const result = await res.json();
     hofCache = result.list || hofCache;
@@ -777,27 +779,18 @@ function hofRecall(key) {
   document.getElementById('output').scrollIntoView({ behavior: 'smooth' });
 }
 
-function clearHOF() {
-  // Not implemented for shared — too destructive.
-  // Delete entries individually instead.
-  toast('Usa ✕ para borrar entradas individuales');
-}
-
 function hofRender() {
   const list = hofCache;
   const container = document.getElementById('hof-list');
   const empty = document.getElementById('hof-empty');
-  const controls = document.getElementById('hof-controls');
 
   if (list.length === 0) {
     container.innerHTML = '';
     empty.style.display = 'block';
-    controls.style.display = 'none';
     return;
   }
 
   empty.style.display = 'none';
-  controls.style.display = 'flex';
 
   let html = '<table class="hof-table"><thead><tr>';
   html += '<th>#</th><th>Atacante</th><th>Defensor</th><th>Fecha</th><th style="text-align:right">Destrucción total</th><th></th>';
