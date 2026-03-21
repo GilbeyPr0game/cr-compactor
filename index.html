@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CR Compactor — pr0game</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080c14;--panel:#0d1320;--inp:#0a0f1a;
+  --border:#1a2a44;--accent:#00d4ff;--adim:#0088aa;
+  --green:#00ff88;--red:#ff4466;
+  --text:#c8d6e5;--dim:#5a7089;--bright:#e8f0f8;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(1px 1px at 10% 20%,rgba(255,255,255,.4),transparent),radial-gradient(1px 1px at 50% 10%,rgba(255,255,255,.5),transparent),radial-gradient(1px 1px at 70% 80%,rgba(255,255,255,.3),transparent),radial-gradient(1.5px 1.5px at 85% 15%,rgba(0,255,136,.3),transparent);pointer-events:none;z-index:0}
+.c{max-width:880px;margin:0 auto;padding:2rem 1.5rem;position:relative;z-index:1}
+.hd{text-align:center;margin-bottom:2rem}
+.hd h1{font-family:'Orbitron',sans-serif;font-size:1.5rem;letter-spacing:4px;color:var(--accent);text-transform:uppercase;text-shadow:0 0 20px rgba(0,212,255,.4);margin-bottom:.3rem}
+.hd .sub{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--dim);letter-spacing:2px}
+.p{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:1.5rem;margin-bottom:1.5rem;position:relative}
+.p::before{content:'';position:absolute;top:0;left:0;width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--adim),transparent)}
+.pl{font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--adim);letter-spacing:2px;text-transform:uppercase;margin-bottom:.8rem}
+textarea{width:100%;min-height:200px;background:var(--inp);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.78rem;line-height:1.5;padding:1rem;resize:vertical;transition:border-color .3s}
+textarea:focus{outline:none;border-color:var(--adim);box-shadow:0 0 10px rgba(0,212,255,.1)}
+textarea::placeholder{color:var(--dim)}
+.br{display:flex;gap:.8rem;margin-top:1rem;flex-wrap:wrap}
+button{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.9rem;letter-spacing:1px;padding:.6rem 1.6rem;border:none;border-radius:3px;cursor:pointer;transition:all .2s}
+.b1{background:var(--accent);color:var(--bg)}
+.b1:hover{background:#33dfff;box-shadow:0 0 12px rgba(0,212,255,.3)}
+.b2{background:transparent;color:var(--dim);border:1px solid var(--border)}
+.b2:hover{border-color:var(--adim);color:var(--text)}
+.rb{background:var(--inp);border:1px solid var(--border);border-radius:3px;padding:1rem;font-family:'Share Tech Mono',monospace;font-size:.78rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:var(--bright);max-height:500px;overflow-y:auto}
+.err{background:rgba(255,68,102,.1);border:1px solid rgba(255,68,102,.3);border-radius:3px;padding:.8rem 1rem;font-family:'Share Tech Mono',monospace;font-size:.78rem;color:var(--red);margin-top:1rem;display:none}
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:var(--bg);font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.85rem;padding:.5rem 1.4rem;border-radius:3px;opacity:0;transition:all .3s;pointer-events:none;z-index:100}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#output{display:none}
+.hof-table{width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;font-size:.75rem}
+.hof-table th{text-align:left;padding:.5rem .4rem;color:var(--accent);border-bottom:1px solid var(--border);font-size:.65rem;letter-spacing:1px;text-transform:uppercase}
+.hof-table td{padding:.45rem .4rem;border-bottom:1px solid rgba(26,42,68,.4);color:var(--text);vertical-align:middle}
+.hof-table tr:hover td{background:rgba(0,212,255,.04)}
+.hof-rank{color:var(--accent);font-weight:700;width:2rem;text-align:center}
+.hof-rank.gold{color:#ffd700}.hof-rank.silver{color:#c0c0c0}.hof-rank.bronze{color:#cd7f32}
+.hof-loss{color:var(--red);text-align:right;white-space:nowrap}
+.hof-date{color:var(--dim);white-space:nowrap}
+.hof-del{background:none;border:none;color:var(--dim);cursor:pointer;font-size:.7rem;padding:2px 6px;opacity:.4;transition:opacity .2s}
+.hof-del:hover{opacity:1;color:var(--red)}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="c">
+  <div class="hd">
+    <h1>CR Compactor</h1>
+    <div class="sub">pr0game battle report compactor</div>
+  </div>
+  <div class="p">
+    <div class="pl">› Pegar informe de batalla</div>
+    <textarea id="input" placeholder="Pega aquí el informe de batalla completo de pr0game..."></textarea>
+    <div class="err" id="error"></div>
+    <div class="br">
+      <button class="b1" onclick="compact()">Compactar</button>
+      <button class="b2" onclick="clearAll()">Limpiar</button>
+    </div>
+  </div>
+  <div class="p" id="output">
+    <div class="pl">› Resultado</div>
+    <div class="rb" id="result"></div>
+    <div class="br">
+      <button class="b1" onclick="copyText()">Copiar texto</button>
+      <button class="b2" onclick="copyDiscord()">Copiar Discord</button>
+      <button class="b2" onclick="copyBBCode()">Copiar BBCode</button>
+    </div>
+  </div>
+
+  <!-- Hall of Fame -->
+  <div class="p" id="hof-panel">
+    <div class="pl">› Hall of Fame — Top batallas por destrucción total</div>
+    <div id="hof-list"></div>
+    <div id="hof-empty" style="font-family:'Share Tech Mono',monospace;font-size:.78rem;color:var(--dim);text-align:center;padding:1rem;">Aún no hay batallas registradas.</div>
+    <div class="br" id="hof-controls" style="display:none">
+      <button class="b2" onclick="clearHOF()">Vaciar Hall of Fame</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Helpers ──
+const parseN = s => s ? parseInt(s.replace(/\./g,''),10)||0 : 0;
+const fmtN = n => Math.abs(n).toLocaleString('de-DE');
+const signN = n => (n<0?'-':'+') + fmtN(n);
+
+function showErr(m){const e=document.getElementById('error');e.textContent=m;e.style.display='block'}
+function hideErr(){document.getElementById('error').style.display='none'}
+function toast(m){const t=document.getElementById('toast');t.textContent=m||'Copiado';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
+
+// ══════════════════════════════════════════════════════
+// COST TABLE - pr0game ship & defense costs [M, C, D]
+// Keys match the names used in battle reports
+// ══════════════════════════════════════════════════════
+
+const COSTS = {
+  // ── Ships ──
+  'N.C pequeña':              [2000, 2000, 0],
+  'Nave pequeña de carga':    [2000, 2000, 0],
+  'N.C grande':               [6000, 6000, 0],
+  'Nave grande de carga':     [6000, 6000, 0],
+  'Cazador ligero':           [3000, 1000, 0],
+  'Cazador pesado':           [6500, 3500, 0],
+  'Crucero':                  [20000, 7000, 2000],
+  'Nave de batalla':          [45000, 15000, 0],
+  'Colonizador':              [10000, 20000, 10000],
+  'Reciclador':               [10000, 6000, 2000],
+  'S. espionaje':             [0, 1000, 0],
+  'Sonda de espionaje':       [0, 1000, 0],
+  'Bombardero':               [50000, 25000, 15000],
+  'Satélite solar':           [0, 2000, 500],
+  'Destructor':               [60000, 50000, 15000],
+  'Estrella de la muerte':    [5000000, 4000000, 1000000],
+  'Acorazado':                [30000, 40000, 15000],
+  'Crucero Pesado':           [30000, 12000, 5000],
+  'Transportador de Tormenta':[4500, 3500, 400],
+  'Reciclador Optimizado':    [26000, 14000, 5000],
+  // ── English aliases ──
+  'Light Cargo':              [2000, 2000, 0],
+  'Heavy Cargo':              [6000, 6000, 0],
+  'Light Fighter':            [3000, 1000, 0],
+  'Heavy Fighter':            [6500, 3500, 0],
+  'Cruiser':                  [20000, 7000, 2000],
+  'Battleship':               [45000, 15000, 0],
+  'Colony Ship':              [10000, 20000, 10000],
+  'Recycler':                 [10000, 6000, 2000],
+  'Spy Probe':                [0, 1000, 0],
+  'Bomber':                   [50000, 25000, 15000],
+  'Solar Satellite':          [0, 2000, 500],
+  'Destroyer':                [60000, 50000, 15000],
+  'Deathstar':                [5000000, 4000000, 1000000],
+  'Battle Cruiser':           [30000, 40000, 15000],
+  'Heavy Cruiser':            [30000, 12000, 5000],
+  'Storm Carrier':            [4500, 3500, 400],
+  'Optimised Recycler':       [26000, 14000, 5000],
+  // ── Defenses ──
+  'Lanzamisiles':             [2000, 0, 0],
+  'Missile Launcher':         [2000, 0, 0],
+  'Láser':                    [1500, 500, 0],
+  'Láser pequeño':            [1500, 500, 0],
+  'Light Laser Turret':       [1500, 500, 0],
+  'Láser grande':             [6000, 2000, 0],
+  'Heavy Laser Turret':       [6000, 2000, 0],
+  'Cañón Gauss':              [20000, 15000, 2000],
+  'Gauss Cannon':             [20000, 15000, 2000],
+  'Cañón iónico':             [3000, 5000, 0],
+  'Ion Cannon':               [3000, 5000, 0],
+  'Cañón de plasma':          [50000, 50000, 30000],
+  'Plasma Cannon':            [50000, 50000, 30000],
+  'C.P de protección':        [10000, 10000, 0],
+  'Cúpula pequeña de protección': [10000, 10000, 0],
+  'Small Shield Dome':        [10000, 10000, 0],
+  'C.G de protección':        [50000, 50000, 0],
+  'Cúpula grande de protección':  [50000, 50000, 0],
+  'Large Shield Dome':        [50000, 50000, 0],
+};
+
+// Calculate resource losses from fleet diff
+function calcLosses(fleets) {
+  let m = 0, c = 0, d = 0;
+  for (const [ship, counts] of Object.entries(fleets)) {
+    const lost = counts.start - counts.end;
+    if (lost <= 0) continue;
+    const cost = COSTS[ship];
+    if (cost) {
+      m += lost * cost[0];
+      c += lost * cost[1];
+      d += lost * cost[2];
+    }
+  }
+  return { metal: m, crystal: c, deut: d };
+}
+
+// ══════════════════════════════════════════════════════
+// PARSER - handles pr0game tab-separated battle reports
+// ══════════════════════════════════════════════════════
+
+function parseReport(raw) {
+  const lines = raw.split('\n');
+
+  // ── 1. Find all fleet blocks ──
+  // A fleet block starts with "Atacante X" or "Defensor X"
+  // followed by tech line, Tipo line, Cantidad line(s), Armas, Escudo, Blindaje
+  
+  const playerRe = /^(Atacante|Defensor|Attacker|Defender|Angreifer|Verteidiger)\s+(.+?)(?:\s*\((\[.+?\])\s*(?:\(.\))?\))\s*$/;
+  const tipoRe = /^(Tipo|Type|Typ)\t/;
+  const cantRe = /^(Cantidad|Amount|Anzahl)\t/;
+  const techRe = /^Armas \d+%|^Waffen \d+%|^Weapons \d+%/;
+  const combatRe = /dispara con una fuerza|fires with a power|feuert.*Stärke/i;
+  const skipRowRe = /^(Armas|Escudo|Blindaje|Weapons|Shields|Armour|Waffen|Schilde|Panzerung)\t[\d.]/;
+
+  // Track rounds: round 0 = initial, each combat line increments
+  let currentRound = 0;
+  let blocks = []; // {side, player, alliance, coords, round, ships:{name:count}}
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Combat separator → increment round
+    if (combatRe.test(line)) {
+      currentRound++;
+      continue;
+    }
+
+    // Player header
+    const pm = line.match(playerRe);
+    if (!pm) continue;
+
+    const sideWord = pm[1];
+    const playerName = pm[2].trim();
+    const coords = pm[3] || '';
+    const side = /Atacante|Attacker|Angreifer/.test(sideWord) ? 'att' : 'def';
+
+    // Extract alliance from player name: "Name [TAG]" or just "Name"
+    const alM = playerName.match(/^(.+?)\s*\[(.+?)\]\s*$/);
+    const name = alM ? alM[1].trim() : playerName;
+    const alliance = alM ? alM[2] : '';
+
+    // Find Tipo and Cantidad lines after this header
+    let tipoLine = null;
+    let cantStart = -1;
+    let destroyed = false;
+
+    for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
+      if (/^Destruido|^Destroyed|^Zerstört/i.test(lines[j].trim())) { destroyed = true; break; }
+      if (tipoRe.test(lines[j])) tipoLine = lines[j];
+      if (cantRe.test(lines[j])) { cantStart = j; break; }
+    }
+
+    // If destroyed, push an empty block so all ships end at 0
+    if (destroyed) {
+      blocks.push({ side, player: name, alliance, coords, round: currentRound, ships: {}, destroyed: true });
+      continue;
+    }
+
+    if (!tipoLine || cantStart === -1) continue;
+
+    // Parse ship names from Tipo line
+    const shipNames = tipoLine.split('\t').slice(1).map(s => s.trim()).filter(Boolean);
+
+    // Parse Cantidad: the values might span multiple lines because (-N) wraps
+    // Collect text from cantStart until we hit a line starting with Armas/Escudo/Blindaje/Atacante/Defensor
+    // or another recognizable header
+    let cantText = lines[cantStart];
+    for (let j = cantStart + 1; j < lines.length; j++) {
+      const l = lines[j];
+      // Stop if we hit a new section
+      if (skipRowRe.test(l) || tipoRe.test(l) || playerRe.test(l) || 
+          techRe.test(l) || combatRe.test(l) || /^(Tipo|Type|Typ)\t/.test(l) ||
+          /^(Atacante|Defensor|Attacker|Defender)/.test(l) ||
+          /batalla|battle|Kampf|perdido|lost|escombros|debris/i.test(l)) {
+        break;
+      }
+      cantText += '\n' + l;
+    }
+
+    // Now parse cantText: split by tabs, extract numbers (ignoring (-N) loss parts)
+    // Remove the "Cantidad" prefix
+    cantText = cantText.replace(/^(Cantidad|Amount|Anzahl)/, '').trim();
+    
+    // Split by tabs
+    const cells = cantText.split('\t');
+    
+    const ships = {};
+    for (let k = 0; k < shipNames.length && k < cells.length; k++) {
+      const cell = cells[k].trim();
+      // Cell might be "359\n(-56)" or just "15" or "3"
+      // Take the first number (before any newline or parenthetical)
+      const numMatch = cell.match(/^([\d.]+)/);
+      if (numMatch && shipNames[k]) {
+        ships[shipNames[k]] = parseN(numMatch[1]);
+      }
+    }
+
+    blocks.push({ side, player: name, alliance, coords, round: currentRound, ships });
+  }
+
+  if (blocks.length === 0) return null;
+
+  // ── 2. Merge fleets per player per side per round ──
+  function mergeByRound(blocks, side, round) {
+    const merged = {};
+    let player = '', alliance = '', coords = '';
+    for (const b of blocks) {
+      if (b.side !== side || b.round !== round) continue;
+      player = b.player; alliance = b.alliance; coords = b.coords;
+      for (const [ship, count] of Object.entries(b.ships)) {
+        merged[ship] = (merged[ship] || 0) + count;
+      }
+    }
+    return { player, alliance, coords, ships: merged };
+  }
+
+  // Find first and last round numbers for each side
+  const attRounds = blocks.filter(b => b.side === 'att').map(b => b.round);
+  const defRounds = blocks.filter(b => b.side === 'def').map(b => b.round);
+  
+  const firstRound = 0;
+  const lastAttRound = Math.max(...attRounds);
+  const lastDefRound = Math.max(...defRounds);
+
+  const attInitial = mergeByRound(blocks, 'att', firstRound);
+  const defInitial = mergeByRound(blocks, 'def', firstRound);
+  const attFinal = mergeByRound(blocks, 'att', lastAttRound);
+  const defFinal = mergeByRound(blocks, 'def', lastDefRound);
+
+  // ── 3. Build fleet diffs ──
+  function buildDiff(initial, final) {
+    const diff = {};
+    for (const ship of Object.keys(initial.ships)) {
+      diff[ship] = {
+        start: initial.ships[ship] || 0,
+        end: final.ships[ship] || 0
+      };
+    }
+    return diff;
+  }
+
+  const attFleets = buildDiff(attInitial, attFinal);
+  const defFleets = buildDiff(defInitial, defFinal);
+
+  // ── 4. Parse summary data from bottom of report ──
+  const text = raw;
+
+  // Date
+  let date = '';
+  let dm = text.match(/(\d{1,2})\.\s*(\w+)\s*(\d{4})/);
+  if (dm) date = `${dm[1]}-${dm[2]}-${dm[3]}`;
+
+  // Result
+  let result = '';
+  if (/ha ganado la batalla|has won/i.test(text)) {
+    if (/atacante ha ganado|attacker.*won/i.test(text)) result = 'El atacante ha ganado la batalla';
+    else result = 'El defensor ha ganado la batalla';
+  } else if (/empate|draw|unentschieden/i.test(text)) {
+    result = 'La batalla termina en empate';
+  }
+
+  // Loot (capture) - pr0game uses "Obteniendo" or "capturó"
+  let loot = { metal: 0, crystal: 0, deut: 0 };
+  const lootPatterns = [
+    /Obteniendo\s*([\d.]+)\s*Metal,?\s*([\d.]+)\s*Cristal\s*y\s*([\d.]+)\s*Deut[eé]ri/i,
+    /captur[óo]:\s*([\d.]+)\s*Metal.*?([\d.]+)\s*Cristal.*?([\d.]+)\s*Deut/i,
+    /captured:?\s*([\d.]+)\s*Metal.*?([\d.]+)\s*Crystal.*?([\d.]+)\s*Deut/i,
+  ];
+  for (const re of lootPatterns) {
+    const lm = text.match(re);
+    if (lm) { loot.metal = parseN(lm[1]); loot.crystal = parseN(lm[2]); loot.deut = parseN(lm[3]); break; }
+  }
+
+  // Losses
+  let attLoss = 0, defLoss = 0;
+  let m = text.match(/atacante.*perdido.*?([\d.]+)\s*unidades|attacker.*lost.*?([\d.]+)/i);
+  if (m) attLoss = parseN(m[1] || m[2]);
+  m = text.match(/defensor.*perdido.*?([\d.]+)\s*unidades|defender.*lost.*?([\d.]+)/i);
+  if (m) defLoss = parseN(m[1] || m[2]);
+
+  // Debris - handle the pr0game quirk where "Cristalflotan" is joined
+  let debris = { metal: 0, crystal: 0, deut: 0 };
+  const debRe = /escombros\s*(?:de)?\s*([\d.]+)\s*Metal\s*y\s*([\d.]+)\s*Cristal/i;
+  const debRe2 = /([\d.]+)\s*Metal\s*(?:y|and)\s*([\d.]+)\s*(?:Cristal|Crystal)\s*(?:flotan|float|debris)/i;
+  m = text.match(debRe) || text.match(debRe2);
+  if (m) { debris.metal = parseN(m[1]); debris.crystal = parseN(m[2]); }
+  // Check for deuterium in debris (some versions include it)
+  const debDeutRe = /(?:y|and)\s*([\d.]+)\s*(?:Deuterio|Deuterium)\s*(?:flotan|float)/i;
+  const dd = text.match(debDeutRe);
+  if (dd) debris.deut = parseN(dd[1]);
+
+  // Wreck field
+  let wreck = { metal: 0, crystal: 0, deut: 0 };
+  const wrRe = /campo de restos.*?([\d.]+)\s*(?:metal).*?([\d.]+)\s*(?:cristal|crystal).*?([\d.]+)/i;
+  m = text.match(wrRe);
+  if (m) { wreck.metal = parseN(m[1]); wreck.crystal = parseN(m[2]); wreck.deut = parseN(m[3]); }
+
+  // Recyclers needed
+  let recyclers = 0;
+  m = text.match(/(\d+)\s*Reciclador/i);
+  if (m) recyclers = parseInt(m[1]);
+
+  return {
+    date, result, rounds: currentRound,
+    attName: attInitial.player, attAlliance: attInitial.alliance, attCoords: attInitial.coords,
+    defName: defInitial.player, defAlliance: defInitial.alliance, defCoords: defInitial.coords,
+    attFleets, defFleets,
+    loot, attLoss, defLoss, debris, wreck, recyclers,
+  };
+}
+
+// ══════════════════════════
+// FORMATTERS
+// ══════════════════════════
+
+function formatText(d) {
+  const sep = '________________________________________________';
+  const o = [];
+
+  if (d.date) o.push(`El ${d.date} --:--:--, las siguientes flotas se enfrentaron en batalla:`);
+  o.push('');
+
+  // Attacker
+  o.push(`Atacante ${d.attName}${d.attAlliance ? ' [' + d.attAlliance + ']' : ''}`);
+  o.push(sep);
+  o.push('');
+  for (const [ship, c] of Object.entries(d.attFleets))
+    o.push(`${ship} ${fmtN(c.start)} → ${fmtN(c.end)}`);
+  o.push(sep);
+  o.push('');
+
+  // Defender
+  o.push(`Defensor ${d.defName}${d.defAlliance ? ' [' + d.defAlliance + ']' : ''}`);
+  o.push(sep);
+  o.push('');
+  for (const [ship, c] of Object.entries(d.defFleets))
+    o.push(`${ship} ${fmtN(c.start)} → ${fmtN(c.end)}`);
+  o.push(sep);
+  o.push('');
+
+  // Result
+  if (d.result) { o.push(`¡${d.result} tras ${d.rounds} rondas!`); o.push(''); }
+
+  // Loot
+  const hasLoot = d.loot.metal || d.loot.crystal || d.loot.deut;
+  if (hasLoot) {
+    o.push(`El atacante capturó:`);
+    o.push(`${fmtN(d.loot.metal)} Metal, ${fmtN(d.loot.crystal)} Cristal y ${fmtN(d.loot.deut)} Deuterio`);
+    o.push('');
+  }
+
+  // Losses & debris
+  o.push(`El atacante perdió un total de ${fmtN(d.attLoss)} unidades.`);
+  o.push(`El defensor perdió un total de ${fmtN(d.defLoss)} unidades.`);
+
+  if (d.debris.metal || d.debris.crystal || d.debris.deut)
+    o.push(`Escombros: ${fmtN(d.debris.metal)} Metal, ${fmtN(d.debris.crystal)} Cristal${d.debris.deut ? ' y ' + fmtN(d.debris.deut) + ' Deuterio' : ''}`);
+  if (d.wreck.metal || d.wreck.crystal || d.wreck.deut)
+    o.push(`Campo de restos: ${fmtN(d.wreck.metal)} Metal, ${fmtN(d.wreck.crystal)} Cristal y ${fmtN(d.wreck.deut)} Deuterio`);
+  if (d.recyclers)
+    o.push(`Recicladores necesarios: ${fmtN(d.recyclers)}`);
+
+  o.push('');
+
+  // ── Summaries ──
+  const attLossByRes = calcLosses(d.attFleets);
+  const defLossByRes = calcLosses(d.defFleets);
+  const totalLoot = d.loot.metal + d.loot.crystal + d.loot.deut;
+  const totalDebris = d.debris.metal + d.debris.crystal + d.debris.deut;
+  const totalWreck = d.wreck.metal + d.wreck.crystal + d.wreck.deut;
+
+  // Attacker WITH recycling: loot + debris - losses (per resource)
+  const attWR_M = d.loot.metal + d.debris.metal - attLossByRes.metal;
+  const attWR_C = d.loot.crystal + d.debris.crystal - attLossByRes.crystal;
+  const attWR_D = d.loot.deut + d.debris.deut - attLossByRes.deut;
+  const attWR = attWR_M + attWR_C + attWR_D;
+
+  o.push('Resumen de atacantes (con reciclaje):');
+  o.push(`Metal: ${signN(attWR_M)}`);
+  o.push(`Cristal: ${signN(attWR_C)}`);
+  o.push(`Deuterio: ${signN(attWR_D)}`);
+  o.push(`El atacante obtuvo un beneficio de ${signN(attWR)} unidades.`);
+  o.push('');
+
+  // Attacker WITHOUT recycling: loot - losses (per resource)
+  const attNR_M = d.loot.metal - attLossByRes.metal;
+  const attNR_C = d.loot.crystal - attLossByRes.crystal;
+  const attNR_D = d.loot.deut - attLossByRes.deut;
+  const attNR = attNR_M + attNR_C + attNR_D;
+
+  o.push('Resumen de atacantes (sin reciclaje):');
+  o.push(`Metal: ${signN(attNR_M)}`);
+  o.push(`Cristal: ${signN(attNR_C)}`);
+  o.push(`Deuterio: ${signN(attNR_D)}`);
+  o.push(`El atacante obtuvo un beneficio de ${signN(attNR)} unidades.`);
+  o.push('');
+
+  // Defender: losses + looted - wreck field (per resource)
+  const defBal_M = -defLossByRes.metal - d.loot.metal + d.wreck.metal;
+  const defBal_C = -defLossByRes.crystal - d.loot.crystal + d.wreck.crystal;
+  const defBal_D = -defLossByRes.deut - d.loot.deut + d.wreck.deut;
+  const defBal = defBal_M + defBal_C + defBal_D;
+
+  o.push('Resumen de defensores:');
+  o.push(`Metal: ${signN(defBal_M)}`);
+  o.push(`Cristal: ${signN(defBal_C)}`);
+  o.push(`Deuterio: ${signN(defBal_D)}`);
+  o.push(`El defensor perdió un total de ${signN(defBal)} unidades.`);
+
+  return o.join('\n');
+}
+
+function formatBB(d) {
+  const sep = '[color=#444]________________________________________________[/color]';
+  const o = [];
+
+  if (d.date) o.push(`[b]El ${d.date}[/b], las siguientes flotas se enfrentaron en batalla:`);
+  o.push('');
+
+  o.push(`[b][color=#0a0]Atacante ${d.attName}${d.attAlliance ? ' [' + d.attAlliance + ']' : ''}[/color][/b]`);
+  o.push(sep);
+  for (const [ship, c] of Object.entries(d.attFleets))
+    o.push(`${ship} ${fmtN(c.start)} → ${fmtN(c.end)}`);
+  o.push(sep);
+  o.push('');
+
+  o.push(`[b][color=#c00]Defensor ${d.defName}${d.defAlliance ? ' [' + d.defAlliance + ']' : ''}[/color][/b]`);
+  o.push(sep);
+  for (const [ship, c] of Object.entries(d.defFleets))
+    o.push(`${ship} ${fmtN(c.start)} → ${fmtN(c.end)}`);
+  o.push(sep);
+  o.push('');
+
+  if (d.result) { o.push(`[b]¡${d.result} tras ${d.rounds} rondas![/b]`); o.push(''); }
+
+  const hasLoot = d.loot.metal || d.loot.crystal || d.loot.deut;
+  if (hasLoot)
+    o.push(`[b]Captura:[/b] ${fmtN(d.loot.metal)} M / ${fmtN(d.loot.crystal)} C / ${fmtN(d.loot.deut)} D`);
+
+  o.push(`Pérdidas atacante: [color=#c00]-${fmtN(d.attLoss)}[/color]`);
+  o.push(`Pérdidas defensor: [color=#c00]-${fmtN(d.defLoss)}[/color]`);
+
+  if (d.debris.metal || d.debris.crystal)
+    o.push(`Escombros: ${fmtN(d.debris.metal)} M / ${fmtN(d.debris.crystal)} C${d.debris.deut ? ' / ' + fmtN(d.debris.deut) + ' D' : ''}`);
+  if (d.wreck.metal || d.wreck.crystal)
+    o.push(`Restos: ${fmtN(d.wreck.metal)} M / ${fmtN(d.wreck.crystal)} C / ${fmtN(d.wreck.deut)} D`);
+
+  o.push('');
+
+  const attLossByRes = calcLosses(d.attFleets);
+  const defLossByRes = calcLosses(d.defFleets);
+
+  const attWR = (d.loot.metal+d.debris.metal-attLossByRes.metal) + (d.loot.crystal+d.debris.crystal-attLossByRes.crystal) + (d.loot.deut+d.debris.deut-attLossByRes.deut);
+  const attNR = (d.loot.metal-attLossByRes.metal) + (d.loot.crystal-attLossByRes.crystal) + (d.loot.deut-attLossByRes.deut);
+  const defBal = (-defLossByRes.metal-d.loot.metal+d.wreck.metal) + (-defLossByRes.crystal-d.loot.crystal+d.wreck.crystal) + (-defLossByRes.deut-d.loot.deut+d.wreck.deut);
+
+  const c1 = attWR >= 0 ? '#0a0' : '#c00';
+  const c2 = attNR >= 0 ? '#0a0' : '#c00';
+  const c3 = defBal >= 0 ? '#0a0' : '#c00';
+
+  o.push(`[b]Balance atacante (con reciclaje):[/b] [color=${c1}]${signN(attWR)}[/color]`);
+  o.push(`[b]Balance atacante (sin reciclaje):[/b] [color=${c2}]${signN(attNR)}[/color]`);
+  o.push(`[b]Balance defensor:[/b] [color=${c3}]${signN(defBal)}[/color]`);
+
+  return o.join('\n');
+}
+
+// ══════════════════════════
+// UI
+// ══════════════════════════
+let lastData = null;
+
+function compact() {
+  hideErr();
+  const input = document.getElementById('input').value.trim();
+  if (!input) { showErr('Pega un informe de batalla primero.'); return; }
+
+  const data = parseReport(input);
+  if (!data || (!data.attName && !data.defName)) {
+    showErr('No se pudo parsear el informe. Asegúrate de pegar el texto completo del informe de batalla.');
+    return;
+  }
+
+  lastData = data;
+  document.getElementById('result').textContent = formatText(data);
+  document.getElementById('output').style.display = 'block';
+  document.getElementById('output').scrollIntoView({ behavior: 'smooth' });
+
+  // Auto-save to Hall of Fame
+  hofSave(data);
+}
+
+// Fallback clipboard copy that works inside iframes/sandboxes
+function clipCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta);
+}
+
+function copyText() {
+  clipCopy(document.getElementById('result').textContent);
+  toast('Texto copiado');
+}
+
+function copyDiscord() {
+  if (!lastData) return;
+  const d = lastData;
+
+  function compactFleet(fleets) {
+    const abbr = {
+      'N.C pequeña':'CargaP','Nave pequeña de carga':'CargaP',
+      'N.C grande':'CargaG','Nave grande de carga':'CargaG',
+      'Cazador ligero':'CazaLig','Cazador pesado':'CazaPes',
+      'Crucero':'Cruce','Nave de batalla':'NaveBat',
+      'Colonizador':'Colo','Reciclador':'Reci',
+      'S. espionaje':'Sondas','Sonda de espionaje':'Sondas',
+      'Bombardero':'Bomb','Satélite solar':'Solar',
+      'Destructor':'Destru','Estrella de la muerte':'EdLM',
+      'Acorazado':'Acora','Crucero Pesado':'CrucPes',
+      'Transportador de Tormenta':'TdT','Reciclador Optimizado':'ReciOpt',
+      'Lanzamisiles':'Lanzas','Láser':'LaserP','Láser pequeño':'LaserP',
+      'Láser grande':'LaserG','Cañón Gauss':'Gauss',
+      'Cañón iónico':'Ionic','Cañón de plasma':'Plasma',
+      'C.P de protección':'CPProt','C.G de protección':'CGProt',
+      'Light Cargo':'CargaP','Heavy Cargo':'CargaG',
+      'Light Fighter':'CazaLig','Heavy Fighter':'CazaPes',
+      'Cruiser':'Cruce','Battleship':'NaveBat',
+      'Colony Ship':'Colo','Recycler':'Reci',
+      'Spy Probe':'Sondas','Bomber':'Bomb',
+      'Solar Satellite':'Solar','Destroyer':'Destru',
+      'Deathstar':'EdLM','Battle Cruiser':'Acora',
+      'Heavy Cruiser':'CrucPes','Storm Carrier':'TdT',
+      'Optimised Recycler':'ReciOpt',
+      'Missile Launcher':'Lanzas','Light Laser Turret':'LaserP',
+      'Heavy Laser Turret':'LaserG','Gauss Cannon':'Gauss',
+      'Ion Cannon':'Ionic','Plasma Cannon':'Plasma',
+      'Small Shield Dome':'CPProt','Large Shield Dome':'CGProt',
+    };
+    const parts = [];
+    for (const [ship, c] of Object.entries(fleets)) {
+      const short = abbr[ship] || ship.substring(0, 4);
+      parts.push(`${short} ${fmtN(c.start)}→${fmtN(c.end)}`);
+    }
+    return parts.join(' | ');
+  }
+
+  const attLabel = d.attAlliance ? `${d.attName} [${d.attAlliance}]` : d.attName;
+  const defLabel = d.defAlliance ? `${d.defName} [${d.defAlliance}]` : d.defName;
+
+  const hasLoot = d.loot.metal || d.loot.crystal || d.loot.deut;
+  const attLossByRes = calcLosses(d.attFleets);
+  const defLossByRes = calcLosses(d.defFleets);
+
+  const attWR_M = d.loot.metal + d.debris.metal - attLossByRes.metal;
+  const attWR_C = d.loot.crystal + d.debris.crystal - attLossByRes.crystal;
+  const attWR_D = d.loot.deut + d.debris.deut - attLossByRes.deut;
+  const attWR = attWR_M + attWR_C + attWR_D;
+
+  const attNR_M = d.loot.metal - attLossByRes.metal;
+  const attNR_C = d.loot.crystal - attLossByRes.crystal;
+  const attNR_D = d.loot.deut - attLossByRes.deut;
+  const attNR = attNR_M + attNR_C + attNR_D;
+
+  const defBal_M = -defLossByRes.metal - d.loot.metal + d.wreck.metal;
+  const defBal_C = -defLossByRes.crystal - d.loot.crystal + d.wreck.crystal;
+  const defBal_D = -defLossByRes.deut - d.loot.deut + d.wreck.deut;
+  const defBal = defBal_M + defBal_C + defBal_D;
+
+  const o = [];
+  o.push(`⚔ ${attLabel} vs ${defLabel} | ${d.date || '??'}`);
+  o.push('');
+  o.push(`ATT: ${compactFleet(d.attFleets)}`);
+  o.push('');
+  o.push(`DEF: ${compactFleet(d.defFleets)}`);
+  o.push('');
+  let statusLine = (d.result || '') + ` (${d.rounds} rondas)`;
+  statusLine += ` | Att ${signN(-d.attLoss)} | Def ${signN(-d.defLoss)}`;
+  o.push(statusLine);
+  if (hasLoot)
+    o.push(`Saqueo: ${fmtN(d.loot.metal)} M | ${fmtN(d.loot.crystal)} C | ${fmtN(d.loot.deut)} D`);
+  if (d.debris.metal || d.debris.crystal)
+    o.push(`Escombros: ${fmtN(d.debris.metal)} M | ${fmtN(d.debris.crystal)} C${d.debris.deut ? ' | '+fmtN(d.debris.deut)+' D' : ''}${d.recyclers ? ' | Recis: '+fmtN(d.recyclers) : ''}`);
+  o.push('');
+  o.push(`Atacante (con reciclaje):`);
+  o.push(`  M: ${signN(attWR_M)} | C: ${signN(attWR_C)} | D: ${signN(attWR_D)}`);
+  o.push(`  Total: ${signN(attWR)}`);
+  o.push('');
+  o.push(`Atacante (sin reciclaje):`);
+  o.push(`  M: ${signN(attNR_M)} | C: ${signN(attNR_C)} | D: ${signN(attNR_D)}`);
+  o.push(`  Total: ${signN(attNR)}`);
+  o.push('');
+  o.push(`Defensor:`);
+  o.push(`  M: ${signN(defBal_M)} | C: ${signN(defBal_C)} | D: ${signN(defBal_D)}`);
+  o.push(`  Total: ${signN(defBal)}`);
+
+  clipCopy('```\n' + o.join('\n') + '\n```');
+  toast('Discord copiado');
+}
+
+function copyBBCode() {
+  if (!lastData) return;
+  clipCopy(formatBB(lastData));
+  toast('BBCode copiado');
+}
+
+function clearAll() {
+  document.getElementById('input').value = '';
+  document.getElementById('output').style.display = 'none';
+  lastData = null; hideErr();
+}
+
+// ══════════════════════════
+// HALL OF FAME (API)
+// ══════════════════════════
+
+// ⚠ CHANGE THIS to your Cloudflare Worker URL after deploying
+const HOF_API = 'https://cr-compactor.angelhm87.workers.dev';
+
+let hofCache = []; // local cache to avoid re-fetching on every render
+
+function hofKey(d) {
+  return `${d.attName}_${d.defName}_${d.date}_${d.attLoss}_${d.defLoss}`;
+}
+
+async function hofFetch() {
+  try {
+    const res = await fetch(HOF_API + '/hof');
+    if (!res.ok) throw new Error('API error');
+    hofCache = await res.json();
+  } catch(e) {
+    console.error('HOF fetch error:', e);
+    hofCache = [];
+  }
+  hofRender();
+}
+
+async function hofSave(data) {
+  const entry = {
+    key: hofKey(data),
+    attName: data.attName,
+    attAlliance: data.attAlliance || '',
+    defName: data.defName,
+    defAlliance: data.defAlliance || '',
+    date: data.date || '??',
+    attLoss: data.attLoss,
+    defLoss: data.defLoss,
+    totalLoss: data.attLoss + data.defLoss,
+    rounds: data.rounds || 0,
+    result: data.result || '',
+    compactText: formatText(data),
+  };
+
+  try {
+    const res = await fetch(HOF_API + '/hof', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry),
+    });
+    if (!res.ok) throw new Error('API error');
+    const result = await res.json();
+    hofCache = result.list || hofCache;
+  } catch(e) {
+    console.error('HOF save error:', e);
+  }
+  hofRender();
+}
+
+async function hofDelete(key) {
+  try {
+    const res = await fetch(HOF_API + '/hof/' + encodeURIComponent(key), {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error('API error');
+    const result = await res.json();
+    hofCache = result.list || hofCache;
+  } catch(e) {
+    console.error('HOF delete error:', e);
+  }
+  hofRender();
+}
+
+function hofRecall(key) {
+  const entry = hofCache.find(e => e.key === key);
+  if (!entry) return;
+  document.getElementById('result').textContent = entry.compactText;
+  document.getElementById('output').style.display = 'block';
+  document.getElementById('output').scrollIntoView({ behavior: 'smooth' });
+}
+
+function clearHOF() {
+  // Not implemented for shared — too destructive.
+  // Delete entries individually instead.
+  toast('Usa ✕ para borrar entradas individuales');
+}
+
+function hofRender() {
+  const list = hofCache;
+  const container = document.getElementById('hof-list');
+  const empty = document.getElementById('hof-empty');
+  const controls = document.getElementById('hof-controls');
+
+  if (list.length === 0) {
+    container.innerHTML = '';
+    empty.style.display = 'block';
+    controls.style.display = 'none';
+    return;
+  }
+
+  empty.style.display = 'none';
+  controls.style.display = 'flex';
+
+  let html = '<table class="hof-table"><thead><tr>';
+  html += '<th>#</th><th>Atacante</th><th>Defensor</th><th>Fecha</th><th style="text-align:right">Destrucción total</th><th></th>';
+  html += '</tr></thead><tbody>';
+
+  list.forEach((e, i) => {
+    const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+    const attLabel = e.attAlliance ? `${e.attName} [${e.attAlliance}]` : e.attName;
+    const defLabel = e.defAlliance ? `${e.defName} [${e.defAlliance}]` : e.defName;
+    const safeKey = e.key.replace(/'/g, "\\'");
+
+    html += `<tr onclick="hofRecall('${safeKey}')" style="cursor:pointer">`;
+    html += `<td class="hof-rank ${rankClass}">${i + 1}</td>`;
+    html += `<td>${attLabel}</td>`;
+    html += `<td>${defLabel}</td>`;
+    html += `<td class="hof-date">${e.date}</td>`;
+    html += `<td class="hof-loss">${fmtN(e.totalLoss)}</td>`;
+    html += `<td><button class="hof-del" onclick="event.stopPropagation();hofDelete('${safeKey}')" title="Eliminar">✕</button></td>`;
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// Load HOF on page start
+hofFetch();
+</script>
+</body>
+</html>
