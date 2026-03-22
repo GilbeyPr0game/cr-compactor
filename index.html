@@ -666,45 +666,13 @@ async function fetchURL() {
 
     const { html } = await res.json();
 
-    // Parse HTML and convert tables to tab-separated text
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
+    // Parse pr0game HTML report into tab-separated text
+    const text = htmlToReport(html);
 
-    // Walk through the body and extract text, converting tables properly
-    let text = '';
-    const body = doc.querySelector('.report') || doc.body;
-
-    function walk(node) {
-      if (node.nodeType === 3) { // text node
-        const t = node.textContent;
-        if (t.trim()) text += t;
-        return;
-      }
-      if (node.nodeName === 'TABLE') {
-        const rows = node.querySelectorAll('tr');
-        rows.forEach(row => {
-          const cells = row.querySelectorAll('td, th');
-          if (cells.length > 0) {
-            const cellTexts = Array.from(cells).map(c => c.textContent.trim());
-            text += cellTexts.join('\t') + '\n';
-          }
-        });
-        return;
-      }
-      if (node.nodeName === 'BR') { text += '\n'; return; }
-      if (node.nodeName === 'HR') { text += '\n'; return; }
-
-      for (const child of node.childNodes) walk(child);
-
-      if (/^(DIV|P|H[1-6])$/.test(node.nodeName)) text += '\n';
+    if (!text || text.length < 50) {
+      throw new Error('No se pudo extraer el informe del HTML');
     }
 
-    walk(body);
-
-    // Clean up: remove excessive blank lines
-    text = text.replace(/\n{3,}/g, '\n\n').trim();
-
-    // Put into textarea and compact
     document.getElementById('input').value = text;
     compact();
 
@@ -714,6 +682,75 @@ async function fetchURL() {
     btn.textContent = 'Cargar';
     btn.disabled = false;
   }
+}
+
+function htmlToReport(html) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const lines = [];
+
+  // Walk the entire body in DOM order, processing tables and text nodes
+  function processNode(node) {
+    // Text node
+    if (node.nodeType === 3) {
+      const t = node.textContent.trim();
+      if (t.length > 2) {
+        // Split into individual lines and add meaningful ones
+        t.split(/\n/).forEach(line => {
+          const l = line.trim();
+          if (l.length > 2) lines.push(l);
+        });
+      }
+      return;
+    }
+
+    // Table — only process innermost (no nested tables)
+    if (node.nodeName === 'TABLE') {
+      if (!node.querySelector('table')) {
+        // Innermost table — extract rows as tab-separated
+        const rows = node.querySelectorAll('tr');
+        rows.forEach(r => {
+          const cells = r.querySelectorAll('td, th');
+          if (cells.length === 0) return;
+          const vals = Array.from(cells).map(c => c.textContent.trim());
+          const nonEmpty = vals.filter(v => v.length > 0);
+          if (nonEmpty.length > 0) {
+            // If single cell with player header, output as plain text
+            if (nonEmpty.length === 1 && /^(Attacker|Atacante|Angreifer|Defender|Defensor|Verteidiger)\s/.test(nonEmpty[0])) {
+              lines.push(nonEmpty[0]);
+            } else if (nonEmpty.length === 1 && /^(Destroyed|Destruido|Zerstört)$/i.test(nonEmpty[0])) {
+              lines.push(nonEmpty[0]);
+            } else {
+              lines.push(vals.join('\t'));
+            }
+          }
+        });
+      } else {
+        // Has nested tables — recurse into children
+        for (const child of node.childNodes) processNode(child);
+      }
+      return;
+    }
+
+    // BR = newline
+    if (node.nodeName === 'BR') return;
+
+    // Other elements — recurse
+    for (const child of node.childNodes) processNode(child);
+  }
+
+  processNode(doc.body);
+
+  // Clean up: remove lines that are just "VS", single chars, or pure whitespace
+  const cleaned = lines.filter(l => {
+    const t = l.trim();
+    if (t.length <= 1) return false;
+    if (/^VS$/i.test(t)) return false;
+    if (/^Fight report|^Kampfbericht|^Informe de batalla/i.test(t)) return false;
+    return true;
+  });
+
+  return cleaned.join('\n');
 }
 
 // ══════════════════════════
