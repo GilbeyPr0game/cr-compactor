@@ -213,9 +213,13 @@ function calcLosses(fleets) {
 function parseReport(raw) {
   const lines = raw.split('\n');
 
-  // Detect language
+  // Detect language - check headers first, then ship names as fallback
   const lang = /Angreifer|Verteidiger/m.test(raw) ? 'de'
-    : /Atacante|Defensor/m.test(raw) ? 'es' : 'en';
+    : /Atacante|Defensor/m.test(raw) ? 'es'
+    : /Attacker|Defender/m.test(raw) ? 'en'
+    : /Schlachtschiff|Kreuzer|Schlachtkreuzer|Zerstörer|Leichter Jäger|Schwerer Jäger|Kl\. Transporter|Gr\. Transporter|Spionagesonde|Raketenwerfer/m.test(raw) ? 'de'
+    : /Cazador|Crucero|Acorazado|Bombardero|Destructor|Lanzamisiles/m.test(raw) ? 'es'
+    : 'en';
 
   // ── 1. Find all fleet blocks ──
   // A fleet block starts with "Atacante X" or "Defensor X"
