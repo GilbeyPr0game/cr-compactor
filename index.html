@@ -13,43 +13,43 @@
   --text:#c8d6e5;--dim:#5a7089;--bright:#e8f0f8;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;min-height:100vh}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:18px;min-height:100vh}
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(1px 1px at 10% 20%,rgba(255,255,255,.4),transparent),radial-gradient(1px 1px at 50% 10%,rgba(255,255,255,.5),transparent),radial-gradient(1px 1px at 70% 80%,rgba(255,255,255,.3),transparent),radial-gradient(1.5px 1.5px at 85% 15%,rgba(0,255,136,.3),transparent);pointer-events:none;z-index:0}
 .c{max-width:880px;margin:0 auto;padding:2rem 1.5rem;position:relative;z-index:1}
 .hd{text-align:center;margin-bottom:2rem}
-.hd h1{font-family:'Orbitron',sans-serif;font-size:1.5rem;letter-spacing:4px;color:var(--accent);text-transform:uppercase;text-shadow:0 0 20px rgba(0,212,255,.4);margin-bottom:.3rem}
-.hd .sub{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--dim);letter-spacing:2px}
+.hd h1{font-family:'Orbitron',sans-serif;font-size:1.625rem;letter-spacing:4px;color:var(--accent);text-transform:uppercase;text-shadow:0 0 20px rgba(0,212,255,.4);margin-bottom:.3rem}
+.hd .sub{font-family:'Share Tech Mono',monospace;font-size:.845rem;color:var(--dim);letter-spacing:2px}
 .p{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:1.5rem;margin-bottom:1.5rem;position:relative}
 .p::before{content:'';position:absolute;top:0;left:0;width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--adim),transparent)}
-.pl{font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--adim);letter-spacing:2px;text-transform:uppercase;margin-bottom:.8rem}
-textarea{width:100%;min-height:200px;background:var(--inp);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.78rem;line-height:1.5;padding:1rem;resize:vertical;transition:border-color .3s}
+.pl{font-family:'Share Tech Mono',monospace;font-size:.825rem;color:var(--adim);letter-spacing:2px;text-transform:uppercase;margin-bottom:.8rem}
+textarea{width:100%;min-height:200px;background:var(--inp);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.905rem;line-height:1.5;padding:1rem;resize:vertical;transition:border-color .3s}
 textarea:focus{outline:none;border-color:var(--adim);box-shadow:0 0 10px rgba(0,212,255,.1)}
 textarea::placeholder{color:var(--dim)}
 .br{display:flex;gap:.8rem;margin-top:1rem;flex-wrap:wrap}
-button{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.9rem;letter-spacing:1px;padding:.6rem 1.6rem;border:none;border-radius:3px;cursor:pointer;transition:all .2s}
+button{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:1.025rem;letter-spacing:1px;padding:.6rem 1.6rem;border:none;border-radius:3px;cursor:pointer;transition:all .2s}
 .b1{background:var(--accent);color:var(--bg)}
 .b1:hover{background:#33dfff;box-shadow:0 0 12px rgba(0,212,255,.3)}
 .b2{background:transparent;color:var(--dim);border:1px solid var(--border)}
 .b2:hover{border-color:var(--adim);color:var(--text)}
-.rb{background:var(--inp);border:1px solid var(--border);border-radius:3px;padding:1rem;font-family:'Share Tech Mono',monospace;font-size:.78rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:var(--bright);max-height:500px;overflow-y:auto}
-.err{background:rgba(255,68,102,.1);border:1px solid rgba(255,68,102,.3);border-radius:3px;padding:.8rem 1rem;font-family:'Share Tech Mono',monospace;font-size:.78rem;color:var(--red);margin-top:1rem;display:none}
-.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:var(--bg);font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.85rem;padding:.5rem 1.4rem;border-radius:3px;opacity:0;transition:all .3s;pointer-events:none;z-index:100}
+.rb{background:var(--inp);border:1px solid var(--border);border-radius:3px;padding:1rem;font-family:'Share Tech Mono',monospace;font-size:.905rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:var(--bright);max-height:500px;overflow-y:auto}
+.err{background:rgba(255,68,102,.1);border:1px solid rgba(255,68,102,.3);border-radius:3px;padding:.8rem 1rem;font-family:'Share Tech Mono',monospace;font-size:.905rem;color:var(--red);margin-top:1rem;display:none}
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:var(--bg);font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.975rem;padding:.5rem 1.4rem;border-radius:3px;opacity:0;transition:all .3s;pointer-events:none;z-index:100}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #output{display:none}
 .lang-bar{display:flex;justify-content:center;align-items:center;gap:.6rem;margin-bottom:1.5rem}
-.lang-label{font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-right:.3rem}
+.lang-label{font-family:'Share Tech Mono',monospace;font-size:.825rem;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-right:.3rem}
 .lang-btn{background:transparent;border:1px solid var(--border);border-radius:4px;padding:.3rem .5rem;cursor:pointer;opacity:.5;transition:all .2s;line-height:0}
 .lang-btn:hover{opacity:.8;border-color:var(--adim)}
 .lang-btn.active{opacity:1;border-color:var(--accent);box-shadow:0 0 8px rgba(0,212,255,.2)}
-.hof-table{width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;font-size:.75rem}
-.hof-table th{text-align:left;padding:.5rem .4rem;color:var(--accent);border-bottom:1px solid var(--border);font-size:.65rem;letter-spacing:1px;text-transform:uppercase}
+.hof-table{width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;font-size:.875rem}
+.hof-table th{text-align:left;padding:.5rem .4rem;color:var(--accent);border-bottom:1px solid var(--border);font-size:.775rem;letter-spacing:1px;text-transform:uppercase}
 .hof-table td{padding:.45rem .4rem;border-bottom:1px solid rgba(26,42,68,.4);color:var(--text);vertical-align:middle}
 .hof-table tr:hover td{background:rgba(0,212,255,.04)}
 .hof-rank{color:var(--accent);font-weight:700;width:2rem;text-align:center}
 .hof-rank.gold{color:#ffd700}.hof-rank.silver{color:#c0c0c0}.hof-rank.bronze{color:#cd7f32}
 .hof-loss{color:var(--red);text-align:right;white-space:nowrap}
 .hof-date{color:var(--dim);white-space:nowrap}
-.hof-del{background:none;border:none;color:var(--dim);cursor:pointer;font-size:.7rem;padding:2px 6px;opacity:.4;transition:opacity .2s}
+.hof-del{background:none;border:none;color:var(--dim);cursor:pointer;font-size:.825rem;padding:2px 6px;opacity:.4;transition:opacity .2s}
 .hof-del:hover{opacity:1;color:var(--red)}
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 </style>
@@ -69,7 +69,7 @@ button{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.9rem;letter-
   <div class="p">
     <div class="pl" data-i18n="urlLabel">› Cargar desde URL</div>
     <div style="display:flex;gap:.5rem">
-      <input type="text" id="url-input" placeholder="https://pr0game.com/uni6/game.php?page=raport&raport=..." style="flex:1;background:var(--inp);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.78rem;padding:.5rem .8rem;outline:none" onfocus="this.style.borderColor='var(--adim)'" onblur="this.style.borderColor='var(--border)'">
+      <input type="text" id="url-input" placeholder="https://pr0game.com/uni6/game.php?page=raport&raport=..." style="flex:1;background:var(--inp);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.905rem;padding:.5rem .8rem;outline:none" onfocus="this.style.borderColor='var(--adim)'" onblur="this.style.borderColor='var(--border)'">
       <button class="b1" onclick="fetchURL()" id="fetch-btn" data-i18n="btnLoad">Cargar</button>
     </div>
   </div>
@@ -96,7 +96,7 @@ button{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.9rem;letter-
   <div class="p" id="hof-panel">
     <div class="pl" data-i18n="hofLabel">› Hall of Fame — Top batallas por destrucción total</div>
     <div id="hof-list"></div>
-    <div id="hof-empty" data-i18n="hofEmpty" style="font-family:'Share Tech Mono',monospace;font-size:.78rem;color:var(--dim);text-align:center;padding:1rem;">Aún no hay batallas registradas.</div>
+    <div id="hof-empty" data-i18n="hofEmpty" style="font-family:'Share Tech Mono',monospace;font-size:.905rem;color:var(--dim);text-align:center;padding:1rem;">Aún no hay batallas registradas.</div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
