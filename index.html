@@ -36,6 +36,10 @@ button{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.9rem;letter-
 .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:var(--bg);font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.85rem;padding:.5rem 1.4rem;border-radius:3px;opacity:0;transition:all .3s;pointer-events:none;z-index:100}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #output{display:none}
+.lang-bar{display:flex;justify-content:center;gap:.6rem;margin-bottom:1.5rem}
+.lang-btn{background:transparent;border:1px solid var(--border);border-radius:4px;font-size:1.4rem;padding:.3rem .6rem;cursor:pointer;opacity:.5;transition:all .2s}
+.lang-btn:hover{opacity:.8;border-color:var(--adim)}
+.lang-btn.active{opacity:1;border-color:var(--accent);box-shadow:0 0 8px rgba(0,212,255,.2)}
 .hof-table{width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;font-size:.75rem}
 .hof-table th{text-align:left;padding:.5rem .4rem;color:var(--accent);border-bottom:1px solid var(--border);font-size:.65rem;letter-spacing:1px;text-transform:uppercase}
 .hof-table td{padding:.45rem .4rem;border-bottom:1px solid rgba(26,42,68,.4);color:var(--text);vertical-align:middle}
@@ -55,37 +59,42 @@ button{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.9rem;letter-
     <h1>CR Compactor</h1>
     <div class="sub">pr0game battle report compactor</div>
   </div>
+  <div class="lang-bar">
+    <button class="lang-btn" data-lang="es" onclick="setLang('es')" title="Español">🇪🇸</button>
+    <button class="lang-btn" data-lang="en" onclick="setLang('en')" title="English">🇬🇧</button>
+    <button class="lang-btn" data-lang="de" onclick="setLang('de')" title="Deutsch">🇩🇪</button>
+  </div>
   <div class="p">
-    <div class="pl">› Cargar desde URL</div>
+    <div class="pl" data-i18n="urlLabel">› Cargar desde URL</div>
     <div style="display:flex;gap:.5rem">
       <input type="text" id="url-input" placeholder="https://pr0game.com/uni6/game.php?page=raport&raport=..." style="flex:1;background:var(--inp);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.78rem;padding:.5rem .8rem;outline:none" onfocus="this.style.borderColor='var(--adim)'" onblur="this.style.borderColor='var(--border)'">
-      <button class="b1" onclick="fetchURL()" id="fetch-btn">Cargar</button>
+      <button class="b1" onclick="fetchURL()" id="fetch-btn" data-i18n="btnLoad">Cargar</button>
     </div>
   </div>
   <div class="p">
-    <div class="pl">› Pegar informe de batalla</div>
-    <textarea id="input" placeholder="Pega aquí el informe de batalla completo de pr0game..."></textarea>
+    <div class="pl" data-i18n="pasteLabel">› Pegar informe de batalla</div>
+    <textarea id="input" data-i18n-placeholder="pastePlaceholder" placeholder="Pega aquí el informe de batalla completo de pr0game..."></textarea>
     <div class="err" id="error"></div>
     <div class="br">
-      <button class="b1" onclick="compact()">Compactar</button>
-      <button class="b2" onclick="clearAll()">Limpiar</button>
+      <button class="b1" onclick="compact()" data-i18n="btnCompact">Compactar</button>
+      <button class="b2" onclick="clearAll()" data-i18n="btnClear">Limpiar</button>
     </div>
   </div>
   <div class="p" id="output">
-    <div class="pl">› Resultado</div>
+    <div class="pl" data-i18n="resultLabel">› Resultado</div>
     <div class="rb" id="result"></div>
     <div class="br">
-      <button class="b1" onclick="copyText()">Copiar texto</button>
-      <button class="b2" onclick="copyDiscord()">Copiar Discord</button>
-      <button class="b2" onclick="copyBBCode()">Copiar BBCode</button>
+      <button class="b1" onclick="copyText()" data-i18n="btnCopyText">Copiar texto</button>
+      <button class="b2" onclick="copyDiscord()">Discord</button>
+      <button class="b2" onclick="copyBBCode()">BBCode</button>
     </div>
   </div>
 
   <!-- Hall of Fame -->
   <div class="p" id="hof-panel">
-    <div class="pl">› Hall of Fame — Top batallas por destrucción total</div>
+    <div class="pl" data-i18n="hofLabel">› Hall of Fame — Top batallas por destrucción total</div>
     <div id="hof-list"></div>
-    <div id="hof-empty" style="font-family:'Share Tech Mono',monospace;font-size:.78rem;color:var(--dim);text-align:center;padding:1rem;">Aún no hay batallas registradas.</div>
+    <div id="hof-empty" data-i18n="hofEmpty" style="font-family:'Share Tech Mono',monospace;font-size:.78rem;color:var(--dim);text-align:center;padding:1rem;">Aún no hay batallas registradas.</div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -148,6 +157,7 @@ const COSTS = {
   'Heavy Cruiser':            [30000, 12000, 5000],
   'Storm Carrier':            [4500, 3500, 400],
   'Optimised Recycler':       [26000, 14000, 5000],
+  'Optimized Recycler':       [26000, 14000, 5000],
   // ── Defenses ──
   'Lanzamisiles':             [2000, 0, 0],
   'Missile Launcher':         [2000, 0, 0],
@@ -380,16 +390,16 @@ function parseReport(raw) {
   let dm = text.match(/(\d{1,2})\.\s*(\w+)\s*(\d{4})/);
   if (dm) date = `${dm[1]}-${dm[2]}-${dm[3]}`;
 
-  // Result
+  // Result - store as code, translate at output time
   let result = '';
   if (/ha ganado la batalla|has won|gewonnen/i.test(text)) {
     if (/atacante ha ganado|attacker.*won|Angreifer.*gewonnen/i.test(text)) {
-      result = lang==='de'?'Der Angreifer hat die Schlacht gewonnen':lang==='en'?'The attacker has won the battle':'El atacante ha ganado la batalla';
+      result = 'att_won';
     } else {
-      result = lang==='de'?'Der Verteidiger hat die Schlacht gewonnen':lang==='en'?'The defender has won the battle':'El defensor ha ganado la batalla';
+      result = 'def_won';
     }
   } else if (/empate|draw|unentschieden/i.test(text)) {
-    result = lang==='de'?'Die Schlacht endet unentschieden':lang==='en'?'The fight ends in a draw':'La batalla termina en empate';
+    result = 'draw';
   }
 
   // Loot (capture) - pr0game uses "Obteniendo" or "capturó"
@@ -397,6 +407,7 @@ function parseReport(raw) {
   const lootPatterns = [
     /Obteniendo\s*([\d.]+)\s*Metal,?\s*([\d.]+)\s*Cristal\s*y\s*([\d.]+)\s*Deut[eé]ri/i,
     /captur[óo]:\s*([\d.]+)\s*Metal.*?([\d.]+)\s*Cristal.*?([\d.]+)\s*Deut/i,
+    /captures?\s*([\d.]+)\s*Metal.*?([\d.]+)\s*Crystal.*?([\d.]+)\s*Deut/i,
     /captured:?\s*([\d.]+)\s*Metal.*?([\d.]+)\s*Crystal.*?([\d.]+)\s*Deut/i,
     /erbeutet\s*([\d.]+)\s*Metall,?\s*([\d.]+)\s*Kristall\s*und\s*([\d.]+)\s*Deut/i,
   ];
@@ -407,10 +418,10 @@ function parseReport(raw) {
 
   // Losses
   let attLoss = 0, defLoss = 0;
-  let m = text.match(/atacante.*perdido.*?([\d.]+)\s*unidades|attacker.*lost.*?([\d.]+)|Angreifer.*insgesamt\s*([\d.]+)\s*Units/i);
-  if (m) attLoss = parseN(m[1] || m[2] || m[3]);
-  m = text.match(/defensor.*perdido.*?([\d.]+)\s*unidades|defender.*lost.*?([\d.]+)|Verteidiger.*insgesamt\s*([\d.]+)\s*Units/i);
-  if (m) defLoss = parseN(m[1] || m[2] || m[3]);
+  let m = text.match(/atacante.*perdido.*?([\d.]+)\s*unidades|attackers?\s*loss(?:es)?:?\s*([\d.]+)\s*units|attacker.*lost.*?([\d.]+)|Angreifer.*insgesamt\s*([\d.]+)\s*Units/i);
+  if (m) attLoss = parseN(m[1] || m[2] || m[3] || m[4]);
+  m = text.match(/defensor.*perdido.*?([\d.]+)\s*unidades|defenders?\s*loss(?:es)?:?\s*([\d.]+)\s*units|defender.*lost.*?([\d.]+)|Verteidiger.*insgesamt\s*([\d.]+)\s*Units/i);
+  if (m) defLoss = parseN(m[1] || m[2] || m[3] || m[4]);
 
   // Debris - handle the pr0game quirk where "Cristalflotan" is joined
   let debris = { metal: 0, crystal: 0, deut: 0 };
@@ -464,6 +475,9 @@ const I18N = {
     summDef: 'Resumen de defensores:',
     attBenefit: (n) => `El atacante obtuvo un beneficio de ${n} unidades.`,
     defTotal: (n) => `El defensor perdió un total de ${n} unidades.`,
+    result_att_won: 'El atacante ha ganado la batalla',
+    result_def_won: 'El defensor ha ganado la batalla',
+    result_draw: 'La batalla termina en empate',
   },
   en: {
     header: (date) => `On ${date} --:--:--, the following fleets met in battle:`,
@@ -480,6 +494,9 @@ const I18N = {
     summDef: 'Defender summary:',
     attBenefit: (n) => `The attacker gained ${n} units.`,
     defTotal: (n) => `The defender lost a total of ${n} units.`,
+    result_att_won: 'The attacker has won the battle',
+    result_def_won: 'The defender has won the battle',
+    result_draw: 'The fight ends in a draw',
   },
   de: {
     header: (date) => `Am ${date} --:--:--, trafen die folgenden Flotten aufeinander:`,
@@ -496,15 +513,128 @@ const I18N = {
     summDef: 'Zusammenfassung Verteidiger:',
     attBenefit: (n) => `Der Angreifer erzielte einen Gewinn von ${n} Units.`,
     defTotal: (n) => `Der Verteidiger hat insgesamt ${n} Units verloren.`,
+    result_att_won: 'Der Angreifer hat die Schlacht gewonnen',
+    result_def_won: 'Der Verteidiger hat die Schlacht gewonnen',
+    result_draw: 'Die Schlacht endet unentschieden',
   },
 };
+
+// ══════════════════════════
+// LANGUAGE MANAGEMENT
+// ══════════════════════════
+
+const UI_STRINGS = {
+  es: {
+    urlLabel: '› Cargar desde URL',
+    btnLoad: 'Cargar',
+    pasteLabel: '› Pegar informe de batalla',
+    pastePlaceholder: 'Pega aquí el informe de batalla completo de pr0game...',
+    btnCompact: 'Compactar',
+    btnClear: 'Limpiar',
+    resultLabel: '› Resultado',
+    btnCopyText: 'Copiar texto',
+    hofLabel: '› Hall of Fame — Top batallas por destrucción total',
+    hofEmpty: 'Aún no hay batallas registradas.',
+    hofAttacker: 'ATACANTE', hofDefender: 'DEFENSOR',
+    hofDate: 'FECHA', hofDestruction: 'DESTRUCCIÓN TOTAL',
+    errEmpty: 'Pega un informe de batalla primero.',
+    errParse: 'No se pudo parsear el informe. Asegúrate de pegar el texto completo.',
+    errUrl: 'Introduce una URL de informe de pr0game.',
+    errUrlDomain: 'Solo URLs de pr0game.com.',
+    errExtract: 'No se pudo extraer el informe del HTML.',
+    toastText: 'Texto copiado', toastDiscord: 'Discord copiado', toastBB: 'BBCode copiado',
+    toastBadKey: 'Clave incorrecta', promptAdmin: 'Clave de administrador:',
+  },
+  en: {
+    urlLabel: '› Load from URL',
+    btnLoad: 'Load',
+    pasteLabel: '› Paste battle report',
+    pastePlaceholder: 'Paste the full pr0game battle report here...',
+    btnCompact: 'Compact',
+    btnClear: 'Clear',
+    resultLabel: '› Result',
+    btnCopyText: 'Copy text',
+    hofLabel: '› Hall of Fame — Top battles by total destruction',
+    hofEmpty: 'No battles registered yet.',
+    hofAttacker: 'ATTACKER', hofDefender: 'DEFENDER',
+    hofDate: 'DATE', hofDestruction: 'TOTAL DESTRUCTION',
+    errEmpty: 'Paste a battle report first.',
+    errParse: 'Could not parse the report. Make sure you paste the full report.',
+    errUrl: 'Enter a pr0game report URL.',
+    errUrlDomain: 'Only pr0game.com URLs.',
+    errExtract: 'Could not extract the report from HTML.',
+    toastText: 'Text copied', toastDiscord: 'Discord copied', toastBB: 'BBCode copied',
+    toastBadKey: 'Wrong key', promptAdmin: 'Admin key:',
+  },
+  de: {
+    urlLabel: '› Von URL laden',
+    btnLoad: 'Laden',
+    pasteLabel: '› Kampfbericht einfügen',
+    pastePlaceholder: 'Füge hier den vollständigen pr0game Kampfbericht ein...',
+    btnCompact: 'Kompaktieren',
+    btnClear: 'Löschen',
+    resultLabel: '› Ergebnis',
+    btnCopyText: 'Text kopieren',
+    hofLabel: '› Hall of Fame — Top Schlachten nach Gesamtzerstörung',
+    hofEmpty: 'Noch keine Schlachten registriert.',
+    hofAttacker: 'ANGREIFER', hofDefender: 'VERTEIDIGER',
+    hofDate: 'DATUM', hofDestruction: 'GESAMTZERSTÖRUNG',
+    errEmpty: 'Füge zuerst einen Kampfbericht ein.',
+    errParse: 'Kampfbericht konnte nicht gelesen werden. Stelle sicher, dass er vollständig ist.',
+    errUrl: 'Gib eine pr0game Kampfbericht-URL ein.',
+    errUrlDomain: 'Nur pr0game.com URLs.',
+    errExtract: 'Kampfbericht konnte nicht aus HTML extrahiert werden.',
+    toastText: 'Text kopiert', toastDiscord: 'Discord kopiert', toastBB: 'BBCode kopiert',
+    toastBadKey: 'Falscher Schlüssel', promptAdmin: 'Admin-Schlüssel:',
+  },
+};
+
+// Detect browser language, fallback to 'es'
+function detectBrowserLang() {
+  const nav = (navigator.language || navigator.userLanguage || 'es').toLowerCase();
+  if (nav.startsWith('de')) return 'de';
+  if (nav.startsWith('en')) return 'en';
+  return 'es';
+}
+
+let selectedLang = localStorage.getItem('cr_lang') || detectBrowserLang();
+
+function setLang(lang) {
+  selectedLang = lang;
+  localStorage.setItem('cr_lang', lang);
+  updateUI();
+}
+
+function updateUI() {
+  const U = UI_STRINGS[selectedLang] || UI_STRINGS.es;
+
+  // Update all elements with data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (U[key]) el.textContent = U[key];
+  });
+
+  // Update placeholders
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (U[key]) el.placeholder = U[key];
+  });
+
+  // Update flag buttons
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-lang') === selectedLang);
+  });
+
+  // Re-render HOF with new language
+  if (typeof hofRender === 'function') hofRender();
+}
 
 // ══════════════════════════
 // FORMATTERS
 // ══════════════════════════
 
 function formatText(d) {
-  const L = I18N[d.lang] || I18N.es;
+  const L = I18N[selectedLang] || I18N.es;
   const sep = '________________________________________________';
   const o = [];
 
@@ -523,7 +653,8 @@ function formatText(d) {
     o.push(`${ship} ${fmtN(c.start)} → ${fmtN(c.end)}`);
   o.push(sep); o.push('');
 
-  if (d.result) { o.push(`${d.result} ${L.rounds(d.rounds)}!`); o.push(''); }
+  const resultText = d.result ? (L['result_'+d.result] || d.result) : '';
+  if (resultText) { o.push(`${resultText} ${L.rounds(d.rounds)}!`); o.push(''); }
 
   const hasLoot = d.loot.metal || d.loot.crystal || d.loot.deut;
   if (hasLoot) {
@@ -586,7 +717,7 @@ function formatText(d) {
 }
 
 function formatBB(d) {
-  const L = I18N[d.lang] || I18N.es;
+  const L = I18N[selectedLang] || I18N.es;
   const sep = '[color=#444]________________________________________________[/color]';
   const o = [];
 
@@ -607,7 +738,8 @@ function formatBB(d) {
   o.push(sep);
   o.push('');
 
-  if (d.result) { o.push(`[b]${d.result} ${L.rounds(d.rounds)}![/b]`); o.push(''); }
+  const resultText = d.result ? (L['result_'+d.result] || d.result) : '';
+  if (resultText) { o.push(`[b]${resultText} ${L.rounds(d.rounds)}![/b]`); o.push(''); }
 
   const hasLoot = d.loot.metal || d.loot.crystal || d.loot.deut;
   if (hasLoot)
@@ -650,9 +782,10 @@ async function fetchURL() {
   const urlInput = document.getElementById('url-input');
   const btn = document.getElementById('fetch-btn');
   const targetUrl = urlInput.value.trim();
+  const U = UI_STRINGS[selectedLang] || UI_STRINGS.es;
 
-  if (!targetUrl) { showErr('Introduce una URL de informe de pr0game.'); return; }
-  if (!targetUrl.includes('pr0game.com')) { showErr('Solo URLs de pr0game.com.'); return; }
+  if (!targetUrl) { showErr(U.errUrl); return; }
+  if (!targetUrl.includes('pr0game.com')) { showErr(U.errUrlDomain); return; }
 
   btn.textContent = '...';
   btn.disabled = true;
@@ -661,22 +794,22 @@ async function fetchURL() {
     const res = await fetch(HOF_API + '/fetch?url=' + encodeURIComponent(targetUrl));
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Error al cargar el informe');
+      throw new Error(err.error || U.errExtract);
     }
 
     const { text } = await res.json();
 
     if (!text || text.length < 50) {
-      throw new Error('No se pudo extraer el informe del HTML');
+      throw new Error(U.errExtract);
     }
 
     document.getElementById('input').value = text;
     compact();
 
   } catch(e) {
-    showErr(e.message || 'Error al cargar el informe');
+    showErr(e.message || U.errExtract);
   } finally {
-    btn.textContent = 'Cargar';
+    btn.textContent = U.btnLoad;
     btn.disabled = false;
   }
 }
@@ -688,12 +821,13 @@ let lastData = null;
 
 function compact() {
   hideErr();
+  const U = UI_STRINGS[selectedLang] || UI_STRINGS.es;
   const input = document.getElementById('input').value.trim();
-  if (!input) { showErr('Pega un informe de batalla primero.'); return; }
+  if (!input) { showErr(U.errEmpty); return; }
 
   const data = parseReport(input);
   if (!data || (!data.attName && !data.defName)) {
-    showErr('No se pudo parsear el informe. Asegúrate de pegar el texto completo del informe de batalla.');
+    showErr(U.errParse);
     return;
   }
 
@@ -720,13 +854,14 @@ function clipCopy(text) {
 
 function copyText() {
   clipCopy(document.getElementById('result').textContent);
-  toast('Texto copiado');
+  toast((UI_STRINGS[selectedLang]||UI_STRINGS.es).toastText);
 }
 
 function copyDiscord() {
   if (!lastData) return;
   const d = lastData;
-  const L = I18N[d.lang] || I18N.es;
+  const L = I18N[selectedLang] || I18N.es;
+  const sl = selectedLang;
 
   function compactFleet(fleets) {
     const abbr = {
@@ -755,6 +890,7 @@ function copyDiscord() {
       'Deathstar':'EdLM','Battle Cruiser':'Acora',
       'Heavy Cruiser':'CrucPes','Storm Carrier':'TdT',
       'Optimised Recycler':'ReciOpt',
+      'Optimized Recycler':'ReciOpt',
       'Missile Launcher':'Lanzas','Light Laser Turret':'LaserP',
       'Heavy Laser Turret':'LaserG','Gauss Cannon':'Gauss',
       'Ion Cannon':'Ionic','Plasma Cannon':'Plasma',
@@ -806,12 +942,12 @@ function copyDiscord() {
   const defBal_D = -defLossByRes.deut - d.loot.deut + d.wreck.deut;
   const defBal = defBal_M + defBal_C + defBal_D;
 
-  const lootLabel = d.lang==='de'?'Beute':d.lang==='en'?'Loot':'Saqueo';
-  const debrisLabel = d.lang==='de'?'Trümmer':d.lang==='en'?'Debris':'Escombros';
-  const recisLabel = d.lang==='de'?'Recis':d.lang==='en'?'Recis':'Recis';
-  const attRecLabel = d.lang==='de'?'Angreifer (mit Recycling)':d.lang==='en'?'Attacker (with recycling)':'Atacante (con reciclaje)';
-  const attNoRecLabel = d.lang==='de'?'Angreifer (ohne Recycling)':d.lang==='en'?'Attacker (without recycling)':'Atacante (sin reciclaje)';
-  const defLabel2 = d.lang==='de'?'Verteidiger':d.lang==='en'?'Defender':'Defensor';
+  const lootLabel = sl==='de'?'Beute':sl==='en'?'Loot':'Saqueo';
+  const debrisLabel = sl==='de'?'Trümmer':sl==='en'?'Debris':'Escombros';
+  const recisLabel = sl==='de'?'Recis':sl==='en'?'Recis':'Recis';
+  const attRecLabel = sl==='de'?'Angreifer (mit Recycling)':sl==='en'?'Attacker (with recycling)':'Atacante (con reciclaje)';
+  const attNoRecLabel = sl==='de'?'Angreifer (ohne Recycling)':sl==='en'?'Attacker (without recycling)':'Atacante (sin reciclaje)';
+  const defLabel2 = sl==='de'?'Verteidiger':sl==='en'?'Defender':'Defensor';
 
   const o = [];
   o.push(`⚔ ${attLabel} vs ${defLabel} | ${d.date || '??'}`);
@@ -820,7 +956,8 @@ function copyDiscord() {
   o.push('');
   o.push(`DEF: ${compactFleet(d.defFleets)}`);
   o.push('');
-  let statusLine = (d.result || '') + ` (${d.rounds} ${d.lang==='de'?'Runden':d.lang==='en'?'rounds':'rondas'})`;
+  const resultText = d.result ? (L['result_'+d.result] || d.result) : '';
+  let statusLine = resultText + ` (${d.rounds} ${sl==='de'?'Runden':sl==='en'?'rounds':'rondas'})`;
   statusLine += ` | Att ${signN(-d.attLoss)} | Def ${signN(-d.defLoss)}`;
   o.push(statusLine);
   if (hasLoot)
@@ -841,13 +978,13 @@ function copyDiscord() {
   o.push(`  Total: ${signN(defBal)}`);
 
   clipCopy('```\n' + o.join('\n') + '\n```');
-  toast('Discord copiado');
+  toast((UI_STRINGS[selectedLang]||UI_STRINGS.es).toastDiscord);
 }
 
 function copyBBCode() {
   if (!lastData) return;
   clipCopy(formatBB(lastData));
-  toast('BBCode copiado');
+  toast((UI_STRINGS[selectedLang]||UI_STRINGS.es).toastBB);
 }
 
 function clearAll() {
@@ -910,7 +1047,8 @@ async function hofSave(data) {
 }
 
 async function hofDelete(key) {
-  const adminKey = prompt('Clave de administrador:');
+  const U = UI_STRINGS[selectedLang] || UI_STRINGS.es;
+  const adminKey = prompt(U.promptAdmin);
   if (!adminKey) return;
 
   try {
@@ -918,7 +1056,7 @@ async function hofDelete(key) {
       method: 'DELETE',
       headers: { 'X-Admin-Key': adminKey },
     });
-    if (res.status === 401) { toast('Clave incorrecta'); return; }
+    if (res.status === 401) { toast(U.toastBadKey); return; }
     if (!res.ok) throw new Error('API error');
     const result = await res.json();
     hofCache = result.list || hofCache;
@@ -950,7 +1088,8 @@ function hofRender() {
   empty.style.display = 'none';
 
   let html = '<table class="hof-table"><thead><tr>';
-  html += '<th>#</th><th>Atacante</th><th>Defensor</th><th>Fecha</th><th style="text-align:right">Destrucción total</th><th></th>';
+  const U = UI_STRINGS[selectedLang] || UI_STRINGS.es;
+  html += `<th>#</th><th>${U.hofAttacker}</th><th>${U.hofDefender}</th><th>${U.hofDate}</th><th style="text-align:right">${U.hofDestruction}</th><th></th>`;
   html += '</tr></thead><tbody>';
 
   list.forEach((e, i) => {
@@ -975,6 +1114,7 @@ function hofRender() {
 
 // Load HOF on page start
 hofFetch();
+updateUI();
 </script>
 </body>
 </html>
