@@ -56,6 +56,13 @@ button{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.9rem;letter-
     <div class="sub">pr0game battle report compactor</div>
   </div>
   <div class="p">
+    <div class="pl">› Cargar desde URL</div>
+    <div style="display:flex;gap:.5rem">
+      <input type="text" id="url-input" placeholder="https://pr0game.com/uni6/game.php?page=raport&raport=..." style="flex:1;background:var(--inp);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.78rem;padding:.5rem .8rem;outline:none" onfocus="this.style.borderColor='var(--adim)'" onblur="this.style.borderColor='var(--border)'">
+      <button class="b1" onclick="fetchURL()" id="fetch-btn">Cargar</button>
+    </div>
+  </div>
+  <div class="p">
     <div class="pl">› Pegar informe de batalla</div>
     <textarea id="input" placeholder="Pega aquí el informe de batalla completo de pr0game..."></textarea>
     <div class="err" id="error"></div>
@@ -84,6 +91,9 @@ button{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.9rem;letter-
 <div class="toast" id="toast"></div>
 
 <script>
+// ── Config ──
+const HOF_API = 'https://cr-compactor.angelhm87.workers.dev';
+
 // ── Helpers ──
 const parseN = s => s ? parseInt(s.replace(/\./g,''),10)||0 : 0;
 const fmtN = n => Math.abs(n).toLocaleString('de-DE');
@@ -632,6 +642,81 @@ function formatBB(d) {
 }
 
 // ══════════════════════════
+// URL FETCH
+// ══════════════════════════
+
+async function fetchURL() {
+  hideErr();
+  const urlInput = document.getElementById('url-input');
+  const btn = document.getElementById('fetch-btn');
+  const targetUrl = urlInput.value.trim();
+
+  if (!targetUrl) { showErr('Introduce una URL de informe de pr0game.'); return; }
+  if (!targetUrl.includes('pr0game.com')) { showErr('Solo URLs de pr0game.com.'); return; }
+
+  btn.textContent = '...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(HOF_API + '/fetch?url=' + encodeURIComponent(targetUrl));
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Error al cargar el informe');
+    }
+
+    const { html } = await res.json();
+
+    // Parse HTML and convert tables to tab-separated text
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    // Walk through the body and extract text, converting tables properly
+    let text = '';
+    const body = doc.querySelector('.report') || doc.body;
+
+    function walk(node) {
+      if (node.nodeType === 3) { // text node
+        const t = node.textContent;
+        if (t.trim()) text += t;
+        return;
+      }
+      if (node.nodeName === 'TABLE') {
+        const rows = node.querySelectorAll('tr');
+        rows.forEach(row => {
+          const cells = row.querySelectorAll('td, th');
+          if (cells.length > 0) {
+            const cellTexts = Array.from(cells).map(c => c.textContent.trim());
+            text += cellTexts.join('\t') + '\n';
+          }
+        });
+        return;
+      }
+      if (node.nodeName === 'BR') { text += '\n'; return; }
+      if (node.nodeName === 'HR') { text += '\n'; return; }
+
+      for (const child of node.childNodes) walk(child);
+
+      if (/^(DIV|P|H[1-6])$/.test(node.nodeName)) text += '\n';
+    }
+
+    walk(body);
+
+    // Clean up: remove excessive blank lines
+    text = text.replace(/\n{3,}/g, '\n\n').trim();
+
+    // Put into textarea and compact
+    document.getElementById('input').value = text;
+    compact();
+
+  } catch(e) {
+    showErr(e.message || 'Error al cargar el informe');
+  } finally {
+    btn.textContent = 'Cargar';
+    btn.disabled = false;
+  }
+}
+
+// ══════════════════════════
 // UI
 // ══════════════════════════
 let lastData = null;
@@ -809,9 +894,6 @@ function clearAll() {
 // ══════════════════════════
 // HALL OF FAME (API)
 // ══════════════════════════
-
-// ⚠ CHANGE THIS to your Cloudflare Worker URL after deploying
-const HOF_API = 'https://cr-compactor.angelhm87.workers.dev';
 
 let hofCache = []; // local cache to avoid re-fetching on every render
 
