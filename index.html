@@ -158,6 +158,36 @@ const COSTS = {
   'C.G de protección':        [50000, 50000, 0],
   'Cúpula grande de protección':  [50000, 50000, 0],
   'Large Shield Dome':        [50000, 50000, 0],
+  // ── German aliases ──
+  'Kl. Transporter':          [2000, 2000, 0],
+  'Kleiner Transporter':      [2000, 2000, 0],
+  'Gr. Transporter':          [6000, 6000, 0],
+  'Großer Transporter':       [6000, 6000, 0],
+  'L. Jäger':                 [3000, 1000, 0],
+  'Leichter Jäger':           [3000, 1000, 0],
+  'S. Jäger':                 [6500, 3500, 0],
+  'Schwerer Jäger':           [6500, 3500, 0],
+  'Kreuzer':                  [20000, 7000, 2000],
+  'Schlachtschiff':           [45000, 15000, 0],
+  'Kolonieschiff':            [10000, 20000, 10000],
+  'Recycler':                 [10000, 6000, 2000],
+  'Spionagesonde':            [0, 1000, 0],
+  'Bomber':                   [50000, 25000, 15000],
+  'Solarsatellit':            [0, 2000, 500],
+  'Zerstörer':                [60000, 50000, 15000],
+  'Todesstern':               [5000000, 4000000, 1000000],
+  'Schlachtkreuzer':          [30000, 40000, 15000],
+  'Schwerer Kreuzer':         [30000, 12000, 5000],
+  'Sturmtransporter':         [4500, 3500, 400],
+  'Optimierter Recycler':     [26000, 14000, 5000],
+  'Raketenwerfer':            [2000, 0, 0],
+  'Leichtes Lasergeschütz':   [1500, 500, 0],
+  'Schweres Lasergeschütz':   [6000, 2000, 0],
+  'Gaußkanone':               [20000, 15000, 2000],
+  'Ionengeschütz':            [3000, 5000, 0],
+  'Plasmawerfer':             [50000, 50000, 30000],
+  'Kleine Schildkuppel':      [10000, 10000, 0],
+  'Große Schildkuppel':       [50000, 50000, 0],
 };
 
 // Calculate resource losses from fleet diff
@@ -183,6 +213,10 @@ function calcLosses(fleets) {
 function parseReport(raw) {
   const lines = raw.split('\n');
 
+  // Detect language
+  const lang = /Angreifer|Verteidiger/m.test(raw) ? 'de'
+    : /Atacante|Defensor/m.test(raw) ? 'es' : 'en';
+
   // ── 1. Find all fleet blocks ──
   // A fleet block starts with "Atacante X" or "Defensor X"
   // followed by tech line, Tipo line, Cantidad line(s), Armas, Escudo, Blindaje
@@ -190,9 +224,9 @@ function parseReport(raw) {
   const playerRe = /^(Atacante|Defensor|Attacker|Defender|Angreifer|Verteidiger)\s+(.+?)(?:\s*\((\[.+?\])\s*(?:\(.\))?\))\s*$/;
   const tipoRe = /^(Tipo|Type|Typ)\t/;
   const cantRe = /^(Cantidad|Amount|Anzahl)\t/;
-  const techRe = /^Armas \d+%|^Waffen \d+%|^Weapons \d+%/;
-  const combatRe = /dispara con una fuerza|fires with a power|feuert.*Stärke/i;
-  const skipRowRe = /^(Armas|Escudo|Blindaje|Weapons|Shields|Armour|Waffen|Schilde|Panzerung)\t[\d.]/;
+  const techRe = /^Armas \d+%|^Waffen \d+%|^Weapons \d+%|^Bewaff\. \d+%/;
+  const combatRe = /dispara con una fuerza|fires with a power|feuert.*Stärke|schiesst mit einer Leistung/i;
+  const skipRowRe = /^(Armas|Escudo|Blindaje|Weapons|Shields|Armour|Waffen|Schilde|Panzerung|Bewaff\.|Hülle)\t[\d.]/;
 
   // Track rounds: round 0 = initial, each combat line increments
   let currentRound = 0;
@@ -334,11 +368,14 @@ function parseReport(raw) {
 
   // Result
   let result = '';
-  if (/ha ganado la batalla|has won/i.test(text)) {
-    if (/atacante ha ganado|attacker.*won/i.test(text)) result = 'El atacante ha ganado la batalla';
-    else result = 'El defensor ha ganado la batalla';
+  if (/ha ganado la batalla|has won|gewonnen/i.test(text)) {
+    if (/atacante ha ganado|attacker.*won|Angreifer.*gewonnen/i.test(text)) {
+      result = lang==='de'?'Der Angreifer hat die Schlacht gewonnen':lang==='en'?'The attacker has won the battle':'El atacante ha ganado la batalla';
+    } else {
+      result = lang==='de'?'Der Verteidiger hat die Schlacht gewonnen':lang==='en'?'The defender has won the battle':'El defensor ha ganado la batalla';
+    }
   } else if (/empate|draw|unentschieden/i.test(text)) {
-    result = 'La batalla termina en empate';
+    result = lang==='de'?'Die Schlacht endet unentschieden':lang==='en'?'The fight ends in a draw':'La batalla termina en empate';
   }
 
   // Loot (capture) - pr0game uses "Obteniendo" or "capturó"
@@ -347,6 +384,7 @@ function parseReport(raw) {
     /Obteniendo\s*([\d.]+)\s*Metal,?\s*([\d.]+)\s*Cristal\s*y\s*([\d.]+)\s*Deut[eé]ri/i,
     /captur[óo]:\s*([\d.]+)\s*Metal.*?([\d.]+)\s*Cristal.*?([\d.]+)\s*Deut/i,
     /captured:?\s*([\d.]+)\s*Metal.*?([\d.]+)\s*Crystal.*?([\d.]+)\s*Deut/i,
+    /erbeutet\s*([\d.]+)\s*Metall,?\s*([\d.]+)\s*Kristall\s*und\s*([\d.]+)\s*Deut/i,
   ];
   for (const re of lootPatterns) {
     const lm = text.match(re);
@@ -355,16 +393,17 @@ function parseReport(raw) {
 
   // Losses
   let attLoss = 0, defLoss = 0;
-  let m = text.match(/atacante.*perdido.*?([\d.]+)\s*unidades|attacker.*lost.*?([\d.]+)/i);
-  if (m) attLoss = parseN(m[1] || m[2]);
-  m = text.match(/defensor.*perdido.*?([\d.]+)\s*unidades|defender.*lost.*?([\d.]+)/i);
-  if (m) defLoss = parseN(m[1] || m[2]);
+  let m = text.match(/atacante.*perdido.*?([\d.]+)\s*unidades|attacker.*lost.*?([\d.]+)|Angreifer.*insgesamt\s*([\d.]+)\s*Units/i);
+  if (m) attLoss = parseN(m[1] || m[2] || m[3]);
+  m = text.match(/defensor.*perdido.*?([\d.]+)\s*unidades|defender.*lost.*?([\d.]+)|Verteidiger.*insgesamt\s*([\d.]+)\s*Units/i);
+  if (m) defLoss = parseN(m[1] || m[2] || m[3]);
 
   // Debris - handle the pr0game quirk where "Cristalflotan" is joined
   let debris = { metal: 0, crystal: 0, deut: 0 };
   const debRe = /escombros\s*(?:de)?\s*([\d.]+)\s*Metal\s*y\s*([\d.]+)\s*Cristal/i;
   const debRe2 = /([\d.]+)\s*Metal\s*(?:y|and)\s*([\d.]+)\s*(?:Cristal|Crystal)\s*(?:flotan|float|debris)/i;
-  m = text.match(debRe) || text.match(debRe2);
+  const debRe3 = /liegen nun\s*([\d.]+)\s*Metall\s*und\s*([\d.]+)\s*Kristall/i;
+  m = text.match(debRe) || text.match(debRe2) || text.match(debRe3);
   if (m) { debris.metal = parseN(m[1]); debris.crystal = parseN(m[2]); }
   // Check for deuterium in debris (some versions include it)
   const debDeutRe = /(?:y|and)\s*([\d.]+)\s*(?:Deuterio|Deuterium)\s*(?:flotan|float)/i;
@@ -379,11 +418,11 @@ function parseReport(raw) {
 
   // Recyclers needed
   let recyclers = 0;
-  m = text.match(/(\d+)\s*Reciclador/i);
-  if (m) recyclers = parseInt(m[1]);
+  m = text.match(/(\d+)\s*Reciclador|(\d+)\s*Recycler\s/i);
+  if (m) recyclers = parseInt(m[1] || m[2]);
 
   return {
-    date, result, rounds: currentRound,
+    date, result, rounds: currentRound, lang,
     attName: attInitial.player, attAlliance: attInitial.alliance, attCoords: attInitial.coords,
     defName: defInitial.player, defAlliance: defInitial.alliance, defCoords: defInitial.coords,
     attFleets, defFleets,
@@ -392,140 +431,181 @@ function parseReport(raw) {
 }
 
 // ══════════════════════════
+// LOCALIZATION
+// ══════════════════════════
+
+const I18N = {
+  es: {
+    header: (date) => `El ${date} --:--:--, las siguientes flotas se enfrentaron en batalla:`,
+    att: 'Atacante', def: 'Defensor',
+    rounds: (r) => `tras ${r} rondas`,
+    loot: 'El atacante capturó:',
+    lootLine: (m,c,d) => `${m} Metal, ${c} Cristal y ${d} Deuterio`,
+    attLoss: (n) => `El atacante perdió un total de ${n} unidades.`,
+    defLoss: (n) => `El defensor perdió un total de ${n} unidades.`,
+    debris: 'Escombros', wreck: 'Campo de restos', recyclers: 'Recicladores necesarios',
+    metal: 'Metal', crystal: 'Cristal', deut: 'Deuterio', and: 'y',
+    summAttRec: 'Resumen de atacantes (con reciclaje):',
+    summAttNoRec: 'Resumen de atacantes (sin reciclaje):',
+    summDef: 'Resumen de defensores:',
+    attBenefit: (n) => `El atacante obtuvo un beneficio de ${n} unidades.`,
+    defTotal: (n) => `El defensor perdió un total de ${n} unidades.`,
+  },
+  en: {
+    header: (date) => `On ${date} --:--:--, the following fleets met in battle:`,
+    att: 'Attacker', def: 'Defender',
+    rounds: (r) => `after ${r} rounds`,
+    loot: 'The attacker captured:',
+    lootLine: (m,c,d) => `${m} Metal, ${c} Crystal and ${d} Deuterium`,
+    attLoss: (n) => `The attacker lost a total of ${n} units.`,
+    defLoss: (n) => `The defender lost a total of ${n} units.`,
+    debris: 'Debris', wreck: 'Wreck field', recyclers: 'Recyclers needed',
+    metal: 'Metal', crystal: 'Crystal', deut: 'Deuterium', and: 'and',
+    summAttRec: 'Attacker summary (with recycling):',
+    summAttNoRec: 'Attacker summary (without recycling):',
+    summDef: 'Defender summary:',
+    attBenefit: (n) => `The attacker gained ${n} units.`,
+    defTotal: (n) => `The defender lost a total of ${n} units.`,
+  },
+  de: {
+    header: (date) => `Am ${date} --:--:--, trafen die folgenden Flotten aufeinander:`,
+    att: 'Angreifer', def: 'Verteidiger',
+    rounds: (r) => `nach ${r} Runden`,
+    loot: 'Der Angreifer erbeutete:',
+    lootLine: (m,c,d) => `${m} Metall, ${c} Kristall und ${d} Deuterium`,
+    attLoss: (n) => `Der Angreifer hat insgesamt ${n} Units verloren.`,
+    defLoss: (n) => `Der Verteidiger hat insgesamt ${n} Units verloren.`,
+    debris: 'Trümmerfeld', wreck: 'Wrackfeld', recyclers: 'Benötigte Recycler',
+    metal: 'Metall', crystal: 'Kristall', deut: 'Deuterium', and: 'und',
+    summAttRec: 'Zusammenfassung Angreifer (mit Recycling):',
+    summAttNoRec: 'Zusammenfassung Angreifer (ohne Recycling):',
+    summDef: 'Zusammenfassung Verteidiger:',
+    attBenefit: (n) => `Der Angreifer erzielte einen Gewinn von ${n} Units.`,
+    defTotal: (n) => `Der Verteidiger hat insgesamt ${n} Units verloren.`,
+  },
+};
+
+// ══════════════════════════
 // FORMATTERS
 // ══════════════════════════
 
 function formatText(d) {
+  const L = I18N[d.lang] || I18N.es;
   const sep = '________________________________________________';
   const o = [];
 
-  if (d.date) o.push(`El ${d.date} --:--:--, las siguientes flotas se enfrentaron en batalla:`);
+  if (d.date) o.push(L.header(d.date));
   o.push('');
 
-  // Attacker
-  o.push(`Atacante ${d.attName}${d.attAlliance ? ' [' + d.attAlliance + ']' : ''}`);
-  o.push(sep);
-  o.push('');
+  o.push(`${L.att} ${d.attName}${d.attAlliance ? ' [' + d.attAlliance + ']' : ''}`);
+  o.push(sep); o.push('');
   for (const [ship, c] of Object.entries(d.attFleets))
     o.push(`${ship} ${fmtN(c.start)} → ${fmtN(c.end)}`);
-  o.push(sep);
-  o.push('');
+  o.push(sep); o.push('');
 
-  // Defender
-  o.push(`Defensor ${d.defName}${d.defAlliance ? ' [' + d.defAlliance + ']' : ''}`);
-  o.push(sep);
-  o.push('');
+  o.push(`${L.def} ${d.defName}${d.defAlliance ? ' [' + d.defAlliance + ']' : ''}`);
+  o.push(sep); o.push('');
   for (const [ship, c] of Object.entries(d.defFleets))
     o.push(`${ship} ${fmtN(c.start)} → ${fmtN(c.end)}`);
-  o.push(sep);
-  o.push('');
+  o.push(sep); o.push('');
 
-  // Result
-  if (d.result) { o.push(`¡${d.result} tras ${d.rounds} rondas!`); o.push(''); }
+  if (d.result) { o.push(`${d.result} ${L.rounds(d.rounds)}!`); o.push(''); }
 
-  // Loot
   const hasLoot = d.loot.metal || d.loot.crystal || d.loot.deut;
   if (hasLoot) {
-    o.push(`El atacante capturó:`);
-    o.push(`${fmtN(d.loot.metal)} Metal, ${fmtN(d.loot.crystal)} Cristal y ${fmtN(d.loot.deut)} Deuterio`);
+    o.push(L.loot);
+    o.push(L.lootLine(fmtN(d.loot.metal), fmtN(d.loot.crystal), fmtN(d.loot.deut)));
     o.push('');
   }
 
-  // Losses & debris
-  o.push(`El atacante perdió un total de ${fmtN(d.attLoss)} unidades.`);
-  o.push(`El defensor perdió un total de ${fmtN(d.defLoss)} unidades.`);
+  o.push(L.attLoss(fmtN(d.attLoss)));
+  o.push(L.defLoss(fmtN(d.defLoss)));
 
   if (d.debris.metal || d.debris.crystal || d.debris.deut)
-    o.push(`Escombros: ${fmtN(d.debris.metal)} Metal, ${fmtN(d.debris.crystal)} Cristal${d.debris.deut ? ' y ' + fmtN(d.debris.deut) + ' Deuterio' : ''}`);
+    o.push(`${L.debris}: ${fmtN(d.debris.metal)} ${L.metal}, ${fmtN(d.debris.crystal)} ${L.crystal}${d.debris.deut ? ' ' + L.and + ' ' + fmtN(d.debris.deut) + ' ' + L.deut : ''}`);
   if (d.wreck.metal || d.wreck.crystal || d.wreck.deut)
-    o.push(`Campo de restos: ${fmtN(d.wreck.metal)} Metal, ${fmtN(d.wreck.crystal)} Cristal y ${fmtN(d.wreck.deut)} Deuterio`);
+    o.push(`${L.wreck}: ${fmtN(d.wreck.metal)} ${L.metal}, ${fmtN(d.wreck.crystal)} ${L.crystal} ${L.and} ${fmtN(d.wreck.deut)} ${L.deut}`);
   if (d.recyclers)
-    o.push(`Recicladores necesarios: ${fmtN(d.recyclers)}`);
+    o.push(`${L.recyclers}: ${fmtN(d.recyclers)}`);
 
   o.push('');
 
-  // ── Summaries ──
   const attLossByRes = calcLosses(d.attFleets);
   const defLossByRes = calcLosses(d.defFleets);
-  const totalLoot = d.loot.metal + d.loot.crystal + d.loot.deut;
-  const totalDebris = d.debris.metal + d.debris.crystal + d.debris.deut;
-  const totalWreck = d.wreck.metal + d.wreck.crystal + d.wreck.deut;
 
-  // Attacker WITH recycling: loot + debris - losses (per resource)
   const attWR_M = d.loot.metal + d.debris.metal - attLossByRes.metal;
   const attWR_C = d.loot.crystal + d.debris.crystal - attLossByRes.crystal;
   const attWR_D = d.loot.deut + d.debris.deut - attLossByRes.deut;
   const attWR = attWR_M + attWR_C + attWR_D;
 
-  o.push('Resumen de atacantes (con reciclaje):');
-  o.push(`Metal: ${signN(attWR_M)}`);
-  o.push(`Cristal: ${signN(attWR_C)}`);
-  o.push(`Deuterio: ${signN(attWR_D)}`);
-  o.push(`El atacante obtuvo un beneficio de ${signN(attWR)} unidades.`);
+  o.push(L.summAttRec);
+  o.push(`${L.metal}: ${signN(attWR_M)}`);
+  o.push(`${L.crystal}: ${signN(attWR_C)}`);
+  o.push(`${L.deut}: ${signN(attWR_D)}`);
+  o.push(L.attBenefit(signN(attWR)));
   o.push('');
 
-  // Attacker WITHOUT recycling: loot - losses (per resource)
   const attNR_M = d.loot.metal - attLossByRes.metal;
   const attNR_C = d.loot.crystal - attLossByRes.crystal;
   const attNR_D = d.loot.deut - attLossByRes.deut;
   const attNR = attNR_M + attNR_C + attNR_D;
 
-  o.push('Resumen de atacantes (sin reciclaje):');
-  o.push(`Metal: ${signN(attNR_M)}`);
-  o.push(`Cristal: ${signN(attNR_C)}`);
-  o.push(`Deuterio: ${signN(attNR_D)}`);
-  o.push(`El atacante obtuvo un beneficio de ${signN(attNR)} unidades.`);
+  o.push(L.summAttNoRec);
+  o.push(`${L.metal}: ${signN(attNR_M)}`);
+  o.push(`${L.crystal}: ${signN(attNR_C)}`);
+  o.push(`${L.deut}: ${signN(attNR_D)}`);
+  o.push(L.attBenefit(signN(attNR)));
   o.push('');
 
-  // Defender: losses + looted - wreck field (per resource)
   const defBal_M = -defLossByRes.metal - d.loot.metal + d.wreck.metal;
   const defBal_C = -defLossByRes.crystal - d.loot.crystal + d.wreck.crystal;
   const defBal_D = -defLossByRes.deut - d.loot.deut + d.wreck.deut;
   const defBal = defBal_M + defBal_C + defBal_D;
 
-  o.push('Resumen de defensores:');
-  o.push(`Metal: ${signN(defBal_M)}`);
-  o.push(`Cristal: ${signN(defBal_C)}`);
-  o.push(`Deuterio: ${signN(defBal_D)}`);
-  o.push(`El defensor perdió un total de ${signN(defBal)} unidades.`);
+  o.push(L.summDef);
+  o.push(`${L.metal}: ${signN(defBal_M)}`);
+  o.push(`${L.crystal}: ${signN(defBal_C)}`);
+  o.push(`${L.deut}: ${signN(defBal_D)}`);
+  o.push(L.defTotal(signN(defBal)));
 
   return o.join('\n');
 }
 
 function formatBB(d) {
+  const L = I18N[d.lang] || I18N.es;
   const sep = '[color=#444]________________________________________________[/color]';
   const o = [];
 
-  if (d.date) o.push(`[b]El ${d.date}[/b], las siguientes flotas se enfrentaron en batalla:`);
+  if (d.date) o.push(`[b]${L.header(d.date)}[/b]`);
   o.push('');
 
-  o.push(`[b][color=#0a0]Atacante ${d.attName}${d.attAlliance ? ' [' + d.attAlliance + ']' : ''}[/color][/b]`);
+  o.push(`[b][color=#0a0]${L.att} ${d.attName}${d.attAlliance ? ' [' + d.attAlliance + ']' : ''}[/color][/b]`);
   o.push(sep);
   for (const [ship, c] of Object.entries(d.attFleets))
     o.push(`${ship} ${fmtN(c.start)} → ${fmtN(c.end)}`);
   o.push(sep);
   o.push('');
 
-  o.push(`[b][color=#c00]Defensor ${d.defName}${d.defAlliance ? ' [' + d.defAlliance + ']' : ''}[/color][/b]`);
+  o.push(`[b][color=#c00]${L.def} ${d.defName}${d.defAlliance ? ' [' + d.defAlliance + ']' : ''}[/color][/b]`);
   o.push(sep);
   for (const [ship, c] of Object.entries(d.defFleets))
     o.push(`${ship} ${fmtN(c.start)} → ${fmtN(c.end)}`);
   o.push(sep);
   o.push('');
 
-  if (d.result) { o.push(`[b]¡${d.result} tras ${d.rounds} rondas![/b]`); o.push(''); }
+  if (d.result) { o.push(`[b]${d.result} ${L.rounds(d.rounds)}![/b]`); o.push(''); }
 
   const hasLoot = d.loot.metal || d.loot.crystal || d.loot.deut;
   if (hasLoot)
-    o.push(`[b]Captura:[/b] ${fmtN(d.loot.metal)} M / ${fmtN(d.loot.crystal)} C / ${fmtN(d.loot.deut)} D`);
+    o.push(`[b]${L.loot}[/b] ${fmtN(d.loot.metal)} M / ${fmtN(d.loot.crystal)} C / ${fmtN(d.loot.deut)} D`);
 
-  o.push(`Pérdidas atacante: [color=#c00]-${fmtN(d.attLoss)}[/color]`);
-  o.push(`Pérdidas defensor: [color=#c00]-${fmtN(d.defLoss)}[/color]`);
+  o.push(`${L.att}: [color=#c00]-${fmtN(d.attLoss)}[/color]`);
+  o.push(`${L.def}: [color=#c00]-${fmtN(d.defLoss)}[/color]`);
 
   if (d.debris.metal || d.debris.crystal)
-    o.push(`Escombros: ${fmtN(d.debris.metal)} M / ${fmtN(d.debris.crystal)} C${d.debris.deut ? ' / ' + fmtN(d.debris.deut) + ' D' : ''}`);
+    o.push(`${L.debris}: ${fmtN(d.debris.metal)} M / ${fmtN(d.debris.crystal)} C${d.debris.deut ? ' / ' + fmtN(d.debris.deut) + ' D' : ''}`);
   if (d.wreck.metal || d.wreck.crystal)
-    o.push(`Restos: ${fmtN(d.wreck.metal)} M / ${fmtN(d.wreck.crystal)} C / ${fmtN(d.wreck.deut)} D`);
+    o.push(`${L.wreck}: ${fmtN(d.wreck.metal)} M / ${fmtN(d.wreck.crystal)} C / ${fmtN(d.wreck.deut)} D`);
 
   o.push('');
 
@@ -540,9 +620,9 @@ function formatBB(d) {
   const c2 = attNR >= 0 ? '#0a0' : '#c00';
   const c3 = defBal >= 0 ? '#0a0' : '#c00';
 
-  o.push(`[b]Balance atacante (con reciclaje):[/b] [color=${c1}]${signN(attWR)}[/color]`);
-  o.push(`[b]Balance atacante (sin reciclaje):[/b] [color=${c2}]${signN(attNR)}[/color]`);
-  o.push(`[b]Balance defensor:[/b] [color=${c3}]${signN(defBal)}[/color]`);
+  o.push(`[b]${L.summAttRec}[/b] [color=${c1}]${signN(attWR)}[/color]`);
+  o.push(`[b]${L.summAttNoRec}[/b] [color=${c2}]${signN(attNR)}[/color]`);
+  o.push(`[b]${L.summDef}[/b] [color=${c3}]${signN(defBal)}[/color]`);
 
   return o.join('\n');
 }
@@ -592,9 +672,11 @@ function copyText() {
 function copyDiscord() {
   if (!lastData) return;
   const d = lastData;
+  const L = I18N[d.lang] || I18N.es;
 
   function compactFleet(fleets) {
     const abbr = {
+      // Spanish
       'N.C pequeña':'CargaP','Nave pequeña de carga':'CargaP',
       'N.C grande':'CargaG','Nave grande de carga':'CargaG',
       'Cazador ligero':'CazaLig','Cazador pesado':'CazaPes',
@@ -609,6 +691,7 @@ function copyDiscord() {
       'Láser grande':'LaserG','Cañón Gauss':'Gauss',
       'Cañón iónico':'Ionic','Cañón de plasma':'Plasma',
       'C.P de protección':'CPProt','C.G de protección':'CGProt',
+      // English
       'Light Cargo':'CargaP','Heavy Cargo':'CargaG',
       'Light Fighter':'CazaLig','Heavy Fighter':'CazaPes',
       'Cruiser':'Cruce','Battleship':'NaveBat',
@@ -622,6 +705,22 @@ function copyDiscord() {
       'Heavy Laser Turret':'LaserG','Gauss Cannon':'Gauss',
       'Ion Cannon':'Ionic','Plasma Cannon':'Plasma',
       'Small Shield Dome':'CPProt','Large Shield Dome':'CGProt',
+      // German
+      'Kl. Transporter':'KlTrans','Kleiner Transporter':'KlTrans',
+      'Gr. Transporter':'GrTrans','Großer Transporter':'GrTrans',
+      'L. Jäger':'LJäger','Leichter Jäger':'LJäger',
+      'S. Jäger':'SJäger','Schwerer Jäger':'SJäger',
+      'Kreuzer':'Kreuz','Schlachtschiff':'SSchiff',
+      'Kolonieschiff':'Kolo','Recycler':'Reci',
+      'Spionagesonde':'Sonden','Bomber':'Bomb',
+      'Solarsatellit':'Solar','Zerstörer':'Zerst',
+      'Todesstern':'TodSt','Schlachtkreuzer':'SKreuz',
+      'Schwerer Kreuzer':'SchKr','Sturmtransporter':'Sturm',
+      'Optimierter Recycler':'OptRec',
+      'Raketenwerfer':'Raket','Leichtes Lasergeschütz':'LLaser',
+      'Schweres Lasergeschütz':'SLaser','Gaußkanone':'Gauss',
+      'Ionengeschütz':'Ionen','Plasmawerfer':'Plasma',
+      'Kleine Schildkuppel':'KlSch','Große Schildkuppel':'GrSch',
     };
     const parts = [];
     for (const [ship, c] of Object.entries(fleets)) {
@@ -653,6 +752,13 @@ function copyDiscord() {
   const defBal_D = -defLossByRes.deut - d.loot.deut + d.wreck.deut;
   const defBal = defBal_M + defBal_C + defBal_D;
 
+  const lootLabel = d.lang==='de'?'Beute':d.lang==='en'?'Loot':'Saqueo';
+  const debrisLabel = d.lang==='de'?'Trümmer':d.lang==='en'?'Debris':'Escombros';
+  const recisLabel = d.lang==='de'?'Recis':d.lang==='en'?'Recis':'Recis';
+  const attRecLabel = d.lang==='de'?'Angreifer (mit Recycling)':d.lang==='en'?'Attacker (with recycling)':'Atacante (con reciclaje)';
+  const attNoRecLabel = d.lang==='de'?'Angreifer (ohne Recycling)':d.lang==='en'?'Attacker (without recycling)':'Atacante (sin reciclaje)';
+  const defLabel2 = d.lang==='de'?'Verteidiger':d.lang==='en'?'Defender':'Defensor';
+
   const o = [];
   o.push(`⚔ ${attLabel} vs ${defLabel} | ${d.date || '??'}`);
   o.push('');
@@ -660,23 +766,23 @@ function copyDiscord() {
   o.push('');
   o.push(`DEF: ${compactFleet(d.defFleets)}`);
   o.push('');
-  let statusLine = (d.result || '') + ` (${d.rounds} rondas)`;
+  let statusLine = (d.result || '') + ` (${d.rounds} ${d.lang==='de'?'Runden':d.lang==='en'?'rounds':'rondas'})`;
   statusLine += ` | Att ${signN(-d.attLoss)} | Def ${signN(-d.defLoss)}`;
   o.push(statusLine);
   if (hasLoot)
-    o.push(`Saqueo: ${fmtN(d.loot.metal)} M | ${fmtN(d.loot.crystal)} C | ${fmtN(d.loot.deut)} D`);
+    o.push(`${lootLabel}: ${fmtN(d.loot.metal)} M | ${fmtN(d.loot.crystal)} C | ${fmtN(d.loot.deut)} D`);
   if (d.debris.metal || d.debris.crystal)
-    o.push(`Escombros: ${fmtN(d.debris.metal)} M | ${fmtN(d.debris.crystal)} C${d.debris.deut ? ' | '+fmtN(d.debris.deut)+' D' : ''}${d.recyclers ? ' | Recis: '+fmtN(d.recyclers) : ''}`);
+    o.push(`${debrisLabel}: ${fmtN(d.debris.metal)} M | ${fmtN(d.debris.crystal)} C${d.debris.deut ? ' | '+fmtN(d.debris.deut)+' D' : ''}${d.recyclers ? ' | '+recisLabel+': '+fmtN(d.recyclers) : ''}`);
   o.push('');
-  o.push(`Atacante (con reciclaje):`);
+  o.push(`${attRecLabel}:`);
   o.push(`  M: ${signN(attWR_M)} | C: ${signN(attWR_C)} | D: ${signN(attWR_D)}`);
   o.push(`  Total: ${signN(attWR)}`);
   o.push('');
-  o.push(`Atacante (sin reciclaje):`);
+  o.push(`${attNoRecLabel}:`);
   o.push(`  M: ${signN(attNR_M)} | C: ${signN(attNR_C)} | D: ${signN(attNR_D)}`);
   o.push(`  Total: ${signN(attNR)}`);
   o.push('');
-  o.push(`Defensor:`);
+  o.push(`${defLabel2}:`);
   o.push(`  M: ${signN(defBal_M)} | C: ${signN(defBal_C)} | D: ${signN(defBal_D)}`);
   o.push(`  Total: ${signN(defBal)}`);
 
