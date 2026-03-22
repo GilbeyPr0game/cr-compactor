@@ -36,8 +36,9 @@ button{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.9rem;letter-
 .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:var(--bg);font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.85rem;padding:.5rem 1.4rem;border-radius:3px;opacity:0;transition:all .3s;pointer-events:none;z-index:100}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #output{display:none}
-.lang-bar{display:flex;justify-content:center;gap:.6rem;margin-bottom:1.5rem}
-.lang-btn{background:transparent;border:1px solid var(--border);border-radius:4px;font-size:1.4rem;padding:.3rem .6rem;cursor:pointer;opacity:.5;transition:all .2s}
+.lang-bar{display:flex;justify-content:center;align-items:center;gap:.6rem;margin-bottom:1.5rem}
+.lang-label{font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-right:.3rem}
+.lang-btn{background:transparent;border:1px solid var(--border);border-radius:4px;padding:.3rem .5rem;cursor:pointer;opacity:.5;transition:all .2s;line-height:0}
 .lang-btn:hover{opacity:.8;border-color:var(--adim)}
 .lang-btn.active{opacity:1;border-color:var(--accent);box-shadow:0 0 8px rgba(0,212,255,.2)}
 .hof-table{width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;font-size:.75rem}
@@ -60,9 +61,10 @@ button{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.9rem;letter-
     <div class="sub">pr0game battle report compactor</div>
   </div>
   <div class="lang-bar">
-    <button class="lang-btn" data-lang="es" onclick="setLang('es')" title="Español">🇪🇸</button>
-    <button class="lang-btn" data-lang="en" onclick="setLang('en')" title="English">🇬🇧</button>
-    <button class="lang-btn" data-lang="de" onclick="setLang('de')" title="Deutsch">🇩🇪</button>
+    <span class="lang-label" data-i18n="langLabel">Idioma</span>
+    <button class="lang-btn" data-lang="es" onclick="setLang('es')"><img src="https://flagcdn.com/w40/es.png" alt="ES" width="24" height="16"></button>
+    <button class="lang-btn" data-lang="en" onclick="setLang('en')"><img src="https://flagcdn.com/w40/gb.png" alt="EN" width="24" height="16"></button>
+    <button class="lang-btn" data-lang="de" onclick="setLang('de')"><img src="https://flagcdn.com/w40/de.png" alt="DE" width="24" height="16"></button>
   </div>
   <div class="p">
     <div class="pl" data-i18n="urlLabel">› Cargar desde URL</div>
@@ -525,6 +527,7 @@ const I18N = {
 
 const UI_STRINGS = {
   es: {
+    langLabel: 'Idioma',
     urlLabel: '› Cargar desde URL',
     btnLoad: 'Cargar',
     pasteLabel: '› Pegar informe de batalla',
@@ -546,6 +549,7 @@ const UI_STRINGS = {
     toastBadKey: 'Clave incorrecta', promptAdmin: 'Clave de administrador:',
   },
   en: {
+    langLabel: 'Language',
     urlLabel: '› Load from URL',
     btnLoad: 'Load',
     pasteLabel: '› Paste battle report',
@@ -567,6 +571,7 @@ const UI_STRINGS = {
     toastBadKey: 'Wrong key', promptAdmin: 'Admin key:',
   },
   de: {
+    langLabel: 'Sprache',
     urlLabel: '› Von URL laden',
     btnLoad: 'Laden',
     pasteLabel: '› Kampfbericht einfügen',
